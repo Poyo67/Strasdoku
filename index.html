@@ -2,204 +2,70 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>TramDoku</title>
+<title>TramDoku – Strasbourg</title>
 <style>
-body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background:#fafafa; }
-table { border-collapse: collapse; margin: 20px auto; }
-th, td { border: 1px solid #444; padding: 8px; }
-th { background: #eee; }
-input { width: 100%; text-align: center; }
-
-.ok  { background: #c8f7c5; }
-.ko  { background: #f7c5c5; }
-.dup { background: #ffe0b2; }
-
-.barre-wrap { width: 340px; margin: 5px auto; display: flex; align-items: center; gap: 8px; }
-.barre-label { font-size: 13px; width: 90px; text-align: right; white-space: nowrap; }
-.barre { flex: 1; height: 18px; border: 1px solid #999; background: #e8e8e8; border-radius: 4px; overflow: hidden; }
-.progress-score { height: 100%; background: #4caf50; width: 0%; transition: width .3s; }
-.progress-orig  { height: 100%; background: #7c4dff; width: 0%; transition: width .3s; }
-.barre-val { font-size: 13px; width: 70px; text-align: left; }
-
-#bonusZone {
-  display: none;
-  border: 2px dashed #fbc02d;
-  background: #fff8e1;
-  padding: 8px;
-  width: 280px;
-  margin: 15px auto;
+body {
+  font-family: Arial, sans-serif;
+  background: #0f0f0f;
+  color: #f0f0f0;
+  padding: 40px;
 }
-
-.regles { font-size: 12px; color: #666; margin-top: 25px; }
-.victoire { font-size: 20px; color: #2e7d32; font-weight: bold; display: none; margin: 10px 0; }
-
-.orig-badge {
-  display: inline-block;
-  font-size: 11px;
-  background: #ede7f6;
-  color: #5e35b1;
-  border-radius: 8px;
-  padding: 1px 6px;
-  margin-left: 4px;
+h1 {
+  color: #ffcc00;
+}
+ul {
+  list-style: none;
+  padding: 0;
+}
+li {
+  margin: 12px 0;
+}
+a {
+  color: #ffcc00;
+  text-decoration: none;
+  font-weight: bold;
+}
+a:hover {
+  text-decoration: underline;
+}
+.small {
+  color: #aaa;
+  font-size: 13px;
 }
 </style>
 </head>
+
 <body>
 
-<h1>🚋 TramDoku</h1>
+<h1>🚋 TramDoku – Strasbourg</h1>
 
-<div class="barre-wrap">
-  <span class="barre-label">🎯 Score</span>
-  <div class="barre"><div id="progress-score" class="progress-score"></div></div>
-  <span class="barre-val"><span id="score">0</span> / <span id="scoreMax">900</span></span>
-</div>
-<div class="barre-wrap">
-  <span class="barre-label">✨ Originalité</span>
-  <div class="barre"><div id="progress-orig" class="progress-orig"></div></div>
-  <span class="barre-val"><span id="origScore">0</span> / 670</span>
-</div>
+<p>
+Choisis une grille et tente d’atteindre <strong>900 points</strong><br>
+(puis débloque le bonus à <strong>1000</strong> 😉)
+</p>
 
-<div id="jeu"></div>
+<h2>🧩 Grilles disponibles</h2>
 
-<button onclick="verifier()">✅ Vérifier</button>
-<button onclick="toggleSolutions()">📋 Solutions</button>
+<ul>
+  <li>
+    <a href="games/grid-1.html">Grille #1 – Classique</a><br>
+    <span class="small">Facile · Découverte</span>
+  </li>
+  <li>
+    <a href="games/grid-2.html">Grille #2 – Noms propres</a><br>
+    <span class="small">Moyen · Prénoms et lieux</span>
+  </li>
+  <li>
+    <a href="games/grid-3.html">Grille #3 – Lignes C & D</a><br>
+    <span class="small">Difficile · Originalité élevée</span>
+  </li>
+</ul>
 
-<div id="solutions" style="display:none;"></div>
+<hr style="margin:30px 0;border-color:#333">
 
-<div id="bonusZone">
-  <strong>⭐ Case bonus</strong><br>
-  <span id="bonusLabel"></span><br>
-  <input id="bonusInput" placeholder="Station…" onkeydown="if(event.key==='Enter') verifierBonus()">
-  <button onclick="verifierBonus()">✅ Valider le bonus</button>
-</div>
-
-<div id="victoire" class="victoire">🎉 Bravo ! Score maximum atteint 🎉</div>
-<div class="regles">
-<strong>Règles du jeu</strong><br>
-• Chaque case doit contenir une station de tram de Strasbourg.<br>
-• Ligne = contrainte horizontale, colonne = verticale.<br>
-• Une case peut avoir plusieurs solutions : une seule suffit.<br>
-• Une station ne peut être utilisée qu'une seule fois.<br>
-• 900 points → déblocage de la case bonus (1000 max).<br>
-• La barre violette mesure l'originalité de tes réponses.
-</div>
-
-<script>
-const data = {"cols":["En rapport avec la politique","Commence par une voyelle","contient un Parc"],"rows":["Nord de stras ","Sud de stras","Ligne E"],"solutions":{"0,0":[{"nom":"Marcel rudloff","originalite":100},{"nom":"Arago","originalite":100},{"nom":"Clemenceau","originalite":100},{"nom":"République","originalite":50},{"nom":"Parlement européen","originalite":15},{"nom":"Droits de l'homme","originalite":60},{"nom":"Général de gaulle ","originalite":60}],"0,1":[{"nom":"Eckelse","originalite":100},{"nom":"Octroi","originalite":100},{"nom":"Ancienne synagogue les halles ","originalite":20},{"nom":"Arago","originalite":100},{"nom":"Espace européen de l'entreprise ","originalite":50}],"0,2":[{"nom":"Parc d'activités d'eckbolsheim zénith","originalite":50},{"nom":"Parc des romains","originalite":65},{"nom":"Parc des sports zénith","originalite":25},{"nom":"Parc du contades ","originalite":50}],"1,0":[{"nom":"Jean Jaurès","originalite":10},{"nom":"Lycée jean monnet","originalite":50},{"nom":"Aristide Briand","originalite":50},{"nom":"Winston churchill","originalite":10}],"1,1":[{"nom":"Ostwald Hotel de ville ","originalite":75},{"nom":"Elmerforst","originalite":85},{"nom":"Illkirch lixenbuhl","originalite":60},{"nom":"Emile mathis","originalite":50},{"nom":"Etoile polygone","originalite":45},{"nom":"Etoile bourse","originalite":25},{"nom":"Université","originalite":30},{"nom":"Observatoire","originalite":35},{"nom":"Esplanade","originalite":35},{"nom":"Aristide briand","originalite":60}],"1,2":[{"nom":"Parc de la citadelle","originalite":90},{"nom":"Parc Malraux","originalite":30}],"2,0":[{"nom":"Winston churchill","originalite":45},{"nom":"Republique","originalite":30},{"nom":"Parlement européen","originalite":15},{"nom":"Droits de l'homme","originalite":30}],"2,1":[{"nom":"Emile Mathis","originalite":85},{"nom":"Etoile polygone","originalite":30},{"nom":"Esplanade","originalite":30},{"nom":"Observatoire","originalite":35},{"nom":"Université","originalite":25},{"nom":"Elsau","originalite":50}],"2,2":[{"nom":"Parc du contades","originalite":50}]},"bonus":{"label":"Je suis entre Laiterie et Elsau, qui suis-je ?","points":100,"solutions":["Montagne verte"]}};
-const ORIG_MAX = 670;
-let scoreMax = 900;
-let scoreBase = 0;
-let origBase = 0;
-let bonusUnlocked = false;
-let bonusValidated = false;
-
-function n(t) {
-  return t.toLowerCase().normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function parseSol(s) {
-  if (typeof s === "object") return { nom: s.nom, orig: s.originalite || 0 };
-  return { nom: s, orig: 0 };
-}
-
-function afficher() {
-  let h = "<table><tr><th></th>";
-  data.cols.forEach(c => h += "<th>" + c + "</th>");
-  h += "</tr>";
-  data.rows.forEach((r,i) => {
-    h += "<tr><th>" + r + "</th>";
-    data.cols.forEach((_,j) => h += "<td><input data-k='"+i+","+j+"'></td>");
-    h += "</tr>";
-  });
-  h += "</table>";
-  document.getElementById("jeu").innerHTML = h;
-}
-
-function updateBars(score, orig) {
-  document.getElementById("score").textContent = score;
-  document.getElementById("origScore").textContent = orig;
-  document.getElementById("progress-score").style.width = (score / scoreMax * 100) + "%";
-  document.getElementById("progress-orig").style.width = ORIG_MAX > 0 ? (orig / ORIG_MAX * 100) + "%" : "0%";
-}
-
-function verifier() {
-  let score = 0;
-  let orig = 0;
-  let used = {};
-  let doublon = false;
-  document.getElementById("victoire").style.display = "none";
-
-  document.querySelectorAll("input[data-k]").forEach(inp => {
-    inp.className = "";
-    const v = n(inp.value);
-    if (!v) return;
-    if (used[v]) { inp.className = "dup"; doublon = true; return; }
-    used[v] = true;
-    const sols = (data.solutions[inp.dataset.k] || []).map(parseSol);
-    const match = sols.find(s => n(s.nom) === v);
-    if (match) { inp.className = "ok"; score += 100; orig += match.orig; }
-    else inp.className = "ko";
-  });
-
-  if (score === 900 && !doublon && data.bonus && !bonusUnlocked) {
-    bonusUnlocked = true;
-    scoreMax = 900 + data.bonus.points;
-    document.getElementById("scoreMax").textContent = scoreMax;
-    document.getElementById("bonusZone").style.display = "block";
-    document.getElementById("bonusLabel").textContent = data.bonus.label;
-  }
-
-  scoreBase = score;
-  origBase = orig;
-  updateBars(score + (bonusValidated ? data.bonus.points : 0), orig);
-}
-
-function verifierBonus() {
-  if (!bonusUnlocked) return;
-  const input = document.getElementById("bonusInput");
-  const v = n(input.value);
-  input.className = "";
-  if (!v) return;
-  const sols = (data.bonus.solutions || []).map(n);
-  if (sols.includes(v)) {
-    bonusValidated = true;
-    input.className = "ok";
-    document.getElementById("victoire").style.display = "block";
-    updateBars(scoreBase + data.bonus.points, origBase);
-  } else {
-    bonusValidated = false;
-    input.className = "ko";
-    document.getElementById("victoire").style.display = "none";
-    updateBars(scoreBase, origBase);
-  }
-}
-
-function toggleSolutions() {
-  const d = document.getElementById("solutions");
-  if (d.style.display === "block") { d.style.display = "none"; return; }
-  let h = "<table><tr><th></th>";
-  data.cols.forEach(c => h += "<th>" + c + "</th>");
-  h += "</tr>";
-  data.rows.forEach((r,i) => {
-    h += "<tr><th>" + r + "</th>";
-    data.cols.forEach((_,j) => {
-      const sols = (data.solutions[i+","+j] || []).map(parseSol);
-      h += "<td>" + sols.map(s =>
-        s.nom + (s.orig > 0 ? '<span class="orig-badge">✨ ' + s.orig + '</span>' : '')
-      ).join("<br><em>ou</em><br>") + "</td>";
-    });
-    h += "</tr>";
-  });
-  h += "</table>";
-  d.innerHTML = h;
-  d.style.display = "block";
-}
-
-afficher();
-</script>
+<p class="small">
+✏️ <a href="editor.html">Ouvrir l’éditeur de grilles</a>
+</p>
 
 </body>
 </html>
