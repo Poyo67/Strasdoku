@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>TramDoku – Strasbourg</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 20px;
+  background: #fafafa;
+}
+
+table {
+  border-collapse: collapse;
+  margin: 20px auto;
+}
+
+th, td {
+  border: 1px solid #444;
+  padding: 8px;
+}
+
+th { background: #eee; }
+
+input {
+  width: 100%;
+  text-align: center;
+}
+
+.ok { background: #c8f7c5; }
+.ko { background: #f7c5c5; }
+.dup { background: #ffe0b2; }
+
+.barre {
+  width: 300px;
+  height: 20px;
+  border: 1px solid #444;
+  margin: 10px auto;
+}
+
+.progress {
+  height: 100%;
+  width: 0%;
+  background: #4caf50;
+}
+
+.solutions {
+  display: none;
+  margin-top: 20px;
+}
+
+.regles {
+  margin-top: 30px;
+  font-size: 12px;
+  color: #666;
+}
+
+.victoire {
+  margin-top: 20px;
+  font-size: 20px;
+  color: #2e7d32;
+  font-weight: bold;
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🚋 TramDoku – Strasbourg</h1>
+
+<p>
+Trouve une <strong>station de tram de Strasbourg</strong><br>
+qui respecte <strong>la ligne</strong> et <strong>la colonne</strong>.
+</p>
+
+<div>
+Score : <span id="score">0</span> / 900
+</div>
+
+<div class="barre">
+  <div id="progress" class="progress"></div>
+</div>
+
+<div id="jeu"></div>
+
+<button onclick="verifier()">✅ Vérifier</button>
+<button onclick="toggleSolutions()">📋 Solutions</button>
+
+<div id="solutions" class="solutions"></div>
+<div id="victoire" class="victoire">🎉 Bravo ! Grille parfaite 🎉</div>
+
+<div class="regles">
+<strong>Règles du jeu</strong><br>
+• Chaque case doit contenir une station valide.<br>
+• Une case peut avoir <strong>plusieurs solutions</strong> : une seule suffit.<br>
+• Une station ne peut être utilisée <strong>qu’une seule fois</strong>.<br>
+• Une bonne réponse = <strong>100 points</strong>.<br>
+• Score maximum : <strong>900 points</strong>.
+</div>
+
+<script>
+const data = {"cols":["Ligne C","nom alsacien","contient la lettre T"],"rows":["Parking relais","Pas de correspondance","Uniquement centre ville"],"solutions":{"0,0":["Kibitzenau"],"0,1":["Kibitzenau","Baggersee","Elsau","Wolfisheim Henri Rendu","Rives de l'aar","boecklin","Hoenheim Gare","ducs d'alsace"],"0,2":["Kibitzenau","Rotonde","Espace Européen de l’Entreprise","Poteries"],"1,0":["Neuhof rodolphe reuss","saint christophe","Graviere","gravière stade de la meinau","lycée jean monnet","faubourg de saverne"],"1,1":["Wolfisheim Henri Rendu","eckelse","hohberg","elsau","Lingolsheim Tiergaerte","lingolsheim alouettes","bohrie","ostwald hotel de ville","wihrel","elmerforst","graffenstaden","illkirch lixenbuhl","kibitzenau","hochfelden","rieth","phalsbourg","boecklin","rives de l'aar","hoenheim gare","port du rhin","faubourg de saverne","neuhof rodolphe reuss"],"1,2":["Parc d’Activités d’Eckbolsheim zenith","octroi","comtes","Lingolsheim Tiergaerte","lingolsheim alouettes","ostwald hotel de ville","Elmerforst","Martin schongauer","Montagne verte","Musée d'art moderne","Graffenstaden","Saint christophe","Saint-christophe","Kibitzenau","Lycée jean monnet","Citadelle","Starcoop","Port du rhin","Kehl rathaus","Rotterdam","Stade vauban","Parc de la citadelle","Hopital civil","Hotel de police","Lycée pasteur","chambres des métiers","rieth","Espace Européen de l’Entreprise","Pont phario","Futura glacière","Roberstau l'escale","droits de l'homme","travail","le galet","cerventes"],"2,0":["Homme de fer","Broglie"],"2,1":["Alt winmarik","langstross grandrue","langstross grand rue"],"2,2":["Alt winmarik","Porte de l'hopital"]}};
+
+const pointsParCase = 100;
+
+/* 🔑 NORMALISATION ROBUSTE */
+function n(t) {
+  return t
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function afficher() {
+  let h = "<table><tr><th></th>";
+  data.cols.forEach(c => h += "<th>" + c + "</th>");
+  h += "</tr>";
+
+  data.rows.forEach((r, i) => {
+    h += "<tr><th>" + r + "</th>";
+    data.cols.forEach((_, j) => {
+      h += "<td><input data-k='" + i + "," + j + "'></td>";
+    });
+    h += "</tr>";
+  });
+
+  h += "</table>";
+  document.getElementById("jeu").innerHTML = h;
+}
+
+function verifier() {
+  let score = 0;
+  let used = {};
+  let doublon = false;
+
+  document.getElementById("victoire").style.display = "none";
+
+  document.querySelectorAll("input").forEach(input => {
+    input.className = "";
+  });
+
+  document.querySelectorAll("input").forEach(input => {
+    const key = input.dataset.k;
+    const val = n(input.value);
+
+    if (!val) return;
+
+    if (used[val]) {
+      input.className = "dup";
+      doublon = true;
+      return;
+    }
+
+    used[val] = true;
+
+    const solutions = (data.solutions[key] || []).map(n);
+    const ok = solutions.includes(val);
+
+    input.className = ok ? "ok" : "ko";
+    if (ok) score += pointsParCase;
+  });
+
+  document.getElementById("score").textContent = score;
+  document.getElementById("progress").style.width =
+    (score / 900 * 100) + "%";
+
+  if (score === 900 && !doublon) {
+    document.getElementById("victoire").style.display = "block";
+  }
+}
+
+function toggleSolutions() {
+  const d = document.getElementById("solutions");
+
+  if (d.style.display === "block") {
+    d.style.display = "none";
+    return;
+  }
+
+  let h = "<table><tr><th></th>";
+  data.cols.forEach(c => h += "<th>" + c + "</th>");
+  h += "</tr>";
+
+  data.rows.forEach((r, i) => {
+    h += "<tr><th>" + r + "</th>";
+    data.cols.forEach((_, j) => {
+      const sols = data.solutions[i + "," + j] || [];
+      h += "<td>" + sols.join("<br><em>ou</em><br>") + "</td>";
+    });
+    h += "</tr>";
+  });
+
+  h += "</table>";
+  d.innerHTML = h;
+  d.style.display = "block";
+}
+
+afficher();
+</script>
+
+</body>
+</html>
