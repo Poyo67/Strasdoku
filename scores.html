@@ -3,9 +3,12 @@ let allScores = [];
 let currentTab = "global";
 
 // ✅ Restore saved values (FIX)
+const DEFAULT_ID = "69fc4ba6c0954111d8ebe1c4";
+const DEFAULT_KEY = "$2a$10$o86oj1l5sYM6xmHiaLa7d.4so6kMmCt0ezoUGPTZUOi5/JESBwAFa"; // pas master !
+
 const saved = { 
-  id: localStorage.getItem("jb_id") || "",
-  key: localStorage.getItem("jb_key") || "",
+  id: localStorage.getItem("jb_id") || DEFAULT_ID,
+  key: localStorage.getItem("jb_key") || DEFAULT_KEY,
   pseudo: localStorage.getItem("tramdoku_pseudo") || ""
 };
 
