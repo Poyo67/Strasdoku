@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>TramDoku – Strasbourg</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 20px;
+  background: #fafafa;
+}
+
+table {
+  border-collapse: collapse;
+  margin: 20px auto;
+}
+
+th, td {
+  border: 1px solid #444;
+  padding: 8px;
+}
+
+th { background: #eee; }
+
+input {
+  width: 100%;
+  text-align: center;
+}
+
+.ok { background: #c8f7c5; }
+.ko { background: #f7c5c5; }
+.dup { background: #ffe0b2; }
+
+.barre {
+  width: 300px;
+  height: 20px;
+  border: 1px solid #444;
+  margin: 10px auto;
+}
+
+.progress {
+  height: 100%;
+  width: 0%;
+  background: #4caf50;
+}
+
+.solutions {
+  display: none;
+  margin-top: 20px;
+}
+
+.regles {
+  margin-top: 30px;
+  font-size: 12px;
+  color: #666;
+}
+
+.victoire {
+  margin-top: 20px;
+  font-size: 20px;
+  color: #2e7d32;
+  font-weight: bold;
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🚋 TramDoku – Strasbourg</h1>
+
+<p>
+Trouve une <strong>station de tram de Strasbourg</strong><br>
+qui respecte <strong>la ligne</strong> et <strong>la colonne</strong>.
+</p>
+
+<div>
+Score : <span id="score">0</span> / 900
+</div>
+
+<div class="barre">
+  <div id="progress" class="progress"></div>
+</div>
+
+<div id="jeu"></div>
+
+<button onclick="verifier()">✅ Vérifier</button>
+<button onclick="toggleSolutions()">📋 Solutions</button>
+
+<div id="solutions" class="solutions"></div>
+<div id="victoire" class="victoire">🎉 Bravo ! Grille parfaite 🎉</div>
+
+<div class="regles">
+<strong>Règles du jeu</strong><br>
+• Chaque case doit contenir une station valide.<br>
+• Une case peut avoir <strong>plusieurs solutions</strong> : une seule suffit.<br>
+• Une station ne peut être utilisée <strong>qu’une seule fois</strong>.<br>
+• Une bonne réponse = <strong>100 points</strong>.<br>
+• Score maximum : <strong>900 points</strong>.
+</div>
+
+<script>
+const data = {"cols":["Tram A","Contient la lettre K","en 2 mots"],"rows":["3 lignes minimum y passent","Tram E","Ayant la lettre U"],"solutions":{"0,0":["Homme de fer","gare centrale","étoile bourse"],"0,1":["Lycée kleber","Wacken"],"0,2":["Gare centrale","Etoile bourse","Winston Churchill"],"1,0":["schluthfeld","Kimerie stade de la meinau","Krimerie","Lycée couffignal","emile mathis","hohwart","baggersee","colonne","Leclerc","campus d'illkirch"],"1,1":["campus d'illkirch","Krimmeri stade de la meinau","krimeri","lycée kleber","boecklin"],"1,2":["Emile mathis","Lycée couffignal","Etoile polygone","Winston churchill","Lycée kleber","Parlement européen"],"2,0":["Cours de l'illiade","étoile bourse","ducs d'alsace","Hopital de haute pierre","Parc Malraux","Illkirch lixenbulh","campus d'illkirch","lycée couffignal","langstross grandrue","langstross grand rue","ancienne synagogue les halles"],"2,1":["Krimmeri stade de la meinau","illkirch lixenbulh","campus d'illkirch","Kibitzenau","Kehl bahnhof","Kehl rathaus"],"2,2":["Etoile bourse","Lycée couffignal","Illkirch lixenbulh","Parc Malraux","Jean jaures","Winston churchill","Parlement européen","Stade vauban","Lycée pasteur","Marcel rudloff","Paul éluard","Kehl rathaus","Futura glaciere","Martin schongauer","Lingolsheim alouettes"]}};
+
+const pointsParCase = 100;
+
+/* 🔑 NORMALISATION ROBUSTE */
+function n(t) {
+  return t
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function afficher() {
+  let h = "<table><tr><th></th>";
+  data.cols.forEach(c => h += "<th>" + c + "</th>");
+  h += "</tr>";
+
+  data.rows.forEach((r, i) => {
+    h += "<tr><th>" + r + "</th>";
+    data.cols.forEach((_, j) => {
+      h += "<td><input data-k='" + i + "," + j + "'></td>";
+    });
+    h += "</tr>";
+  });
+
+  h += "</table>";
+  document.getElementById("jeu").innerHTML = h;
+}
+
+function verifier() {
+  let score = 0;
+  let used = {};
+  let doublon = false;
+
+  document.getElementById("victoire").style.display = "none";
+
+  document.querySelectorAll("input").forEach(input => {
+    input.className = "";
+  });
+
+  document.querySelectorAll("input").forEach(input => {
+    const key = input.dataset.k;
+    const val = n(input.value);
+
+    if (!val) return;
+
+    if (used[val]) {
+      input.className = "dup";
+      doublon = true;
+      return;
+    }
+
+    used[val] = true;
+
+    const solutions = (data.solutions[key] || []).map(n);
+    const ok = solutions.includes(val);
+
+    input.className = ok ? "ok" : "ko";
+    if (ok) score += pointsParCase;
+  });
+
+  document.getElementById("score").textContent = score;
+  document.getElementById("progress").style.width =
+    (score / 900 * 100) + "%";
+
+  if (score === 900 && !doublon) {
+    document.getElementById("victoire").style.display = "block";
+  }
+}
+
+function toggleSolutions() {
+  const d = document.getElementById("solutions");
+
+  if (d.style.display === "block") {
+    d.style.display = "none";
+    return;
+  }
+
+  let h = "<table><tr><th></th>";
+  data.cols.forEach(c => h += "<th>" + c + "</th>");
+  h += "</tr>";
+
+  data.rows.forEach((r, i) => {
+    h += "<tr><th>" + r + "</th>";
+    data.cols.forEach((_, j) => {
+      const sols = data.solutions[i + "," + j] || [];
+      h += "<td>" + sols.join("<br><em>ou</em><br>") + "</td>";
+    });
+    h += "</tr>";
+  });
+
+  h += "</table>";
+  d.innerHTML = h;
+  d.style.display = "block";
+}
+
+afficher();
+</script>
+
+</body>
+</html>
