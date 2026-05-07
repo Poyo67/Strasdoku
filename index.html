@@ -2,58 +2,298 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TramDoku – Strasbourg</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --tram: #d4a800;
+  --tram-dark: #b88f00;
+  --bg: #f4f4f2;
+  --surface: #ffffff;
+  --border: #d0d0cc;
+  --text: #1a1a1a;
+  --muted: #666;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background: #3e3636;
-  color: #f0f0f0;
-  padding: 40px;
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
 }
-h1 {
-  color: #ffcc00;
+
+/* ── HEADER ── */
+header {
+  background: var(--surface);
+  border-bottom: 3px solid var(--tram);
+  padding: 36px 32px 28px;
+  text-align: center;
 }
-ul {
-  list-style: none;
-  padding: 0;
+
+.logo {
+  font-size: 2.8rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
 }
-li {
-  margin: 12px 0;
+
+.logo .tram-icon {
+  display: inline-block;
+  background: var(--tram);
+  color: #000;
+  padding: 4px 14px;
+  border-radius: 6px;
+  margin-right: 10px;
+  font-size: 2rem;
+  vertical-align: middle;
 }
-a {
-  color: #ffcc00;
-  text-decoration: none;
-  font-weight: bold;
-}
-a:hover {
-  text-decoration: underline;
-}
-.small {
-  color: #aaa;
+
+.tagline {
+  font-family: 'DM Mono', monospace;
   font-size: 13px;
+  color: var(--muted);
+  margin-top: 10px;
+  letter-spacing: 0.08em;
+}
+
+.rules-strip {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.rules-strip span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ── MAIN ── */
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.section-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── GRILLE CARDS ── */
+.grilles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 48px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 18px;
+  text-decoration: none;
+  color: var(--text);
+  display: block;
+  transition: all .15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--tram);
+  transform: scaleX(0);
+  transition: transform .2s;
+}
+
+.card:hover {
+  border-color: var(--tram);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.card:hover::before { transform: scaleX(1); }
+
+.card-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 10px;
+}
+
+.card-arrow {
+  font-size: 18px;
+  color: var(--tram);
+  position: absolute;
+  bottom: 16px;
+  right: 18px;
+  transition: transform .15s;
+}
+
+.card:hover .card-arrow { transform: translateX(3px); }
+
+/* Badge "nouveau" */
+.badge-new {
+  display: inline-block;
+  background: var(--tram);
+  color: #000;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'DM Mono', monospace;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+  letter-spacing: 0.04em;
+}
+
+/* ── COMMENT JOUER ── */
+.how-to {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+}
+
+.how-to-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.how-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.step-num {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+  color: var(--tram-dark);
+}
+
+.step-text {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  font-family: 'DM Mono', monospace;
+  padding-top: 4px;
+}
+
+/* ── FOOTER ── */
+footer {
+  text-align: center;
+  padding: 24px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: #bbb;
+  border-top: 1px solid var(--border);
 }
 </style>
 </head>
-
 <body>
 
-<h1>🚋 TramDoku – Strasbourg</h1>
+<header>
+  <div class="logo">
+    <span class="tram-icon">🚋</span>TramDoku
+  </div>
+  <div class="tagline">LE JEU DES STATIONS DE STRASBOURG</div>
+  <div class="rules-strip">
+    <span>🎯 9 cases à remplir</span>
+    <span>📍 Stations de tram uniquement</span>
+    <span>✨ Score d'originalité</span>
+    <span>⭐ Case bonus à 900 pts</span>
+  </div>
+</header>
 
-<p>
-Choisis une grille et tente d’atteindre <strong>900 points</strong><br>
+<main>
 
-</p>
+  <div class="section-title">Choisir une grille</div>
 
-<h2>🧩 Grilles disponibles</h2>
+  <div class="grilles" id="grilles">
 
+    <!-- ✏️ AJOUTE TES GRILLES ICI — copie-colle un bloc .card pour chaque nouvelle grille -->
 
- <ul>
-  <li><a href="games/grid-1.html">Grille 1 </a></li>
-  <li><a href="games/Grid-2.html">Grille 2 </a></li>
-  <li><a href="games/grid-3.html">Grille 3 </a></li>
-</ul>
-  
-<hr style="margin:30px 0;border-color:#333">
+    <a href="index.html" class="card">
+      <div class="card-num">GRILLE #1</div>
+      <div class="card-title">Grille de départ<span class="badge-new">NEW</span></div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <!-- Exemple grille 2 — décommente quand tu l'as publiée :
+    <a href="Strasdoku-2.html" class="card">
+      <div class="card-num">GRILLE #2</div>
+      <div class="card-title">Spécial lignes C & D</div>
+      <div class="card-arrow">→</div>
+    </a>
+    -->
+
+  </div>
+
+  <div class="section-title">Comment jouer</div>
+
+  <div class="how-to">
+    <div class="how-to-grid">
+      <div class="how-step">
+        <div class="step-num">1</div>
+        <div class="step-text">Remplis chaque case avec une station de tram de Strasbourg.</div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">2</div>
+        <div class="step-text">La station doit vérifier la contrainte de sa ligne ET de sa colonne.</div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">3</div>
+        <div class="step-text">Chaque station ne peut être utilisée qu'une seule fois dans la grille.</div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">4</div>
+        <div class="step-text">900 pts débloquent la case bonus pour atteindre le score parfait de 1000.</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  TramDoku · Strasbourg · Fait avec ❤️ 
+</footer>
 
 </body>
 </html>
