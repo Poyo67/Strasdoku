@@ -1,98 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TramDoku – Scores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --tram: #d4a800;
+  --tram-dark: #b88f00;
+  --bg: #f4f4f2;
+  --surface: #ffffff;
+  --border: #d0d0cc;
+  --text: #1a1a1a;
+  --muted: #666;
+  --purple: #5e35b1;
+}
+body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+nav {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border-bottom: 2px solid var(--tram);
+  padding: 10px 20px; position: sticky; top: 0; z-index: 50;
+}
+.nav-btn {
+  color: var(--tram); text-decoration: none; font-size: 13px; font-weight: 700;
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg); transition: all .15s;
+}
+.nav-btn:hover { background: var(--tram); color: #000; border-color: var(--tram); }
+.nav-title { font-weight: 800; font-size: 15px; }
+
+.wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px 80px; }
+
+h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 4px; }
+.page-sub { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 28px; letter-spacing: .06em; }
+
+/* Config bar */
+.config-bar {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 18px; margin-bottom: 24px; display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+}
+.cf { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 160px; }
+.cf label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+.cf input {
+  font-family: 'DM Mono', monospace; font-size: 13px;
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; outline: none; transition: border-color .2s;
+}
+.cf input:focus { border-color: var(--tram); }
+button.btn-load {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+  padding: 9px 20px; background: var(--tram); color: #000; border: none; border-radius: 6px;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+button.btn-load:hover { background: var(--tram-dark); }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+.tab {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+  padding: 9px 20px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface); color: var(--muted); cursor: pointer; transition: all .15s;
+}
+.tab.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+.tab:hover:not(.active) { border-color: var(--tram); color: var(--tram-dark); }
+
+/* Filter bar */
+.filter-bar {
+  display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+}
+.filter-bar label { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+.filter-bar select {
+  font-family: 'DM Mono', monospace; font-size: 13px;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; outline: none;
+}
+
+/* Table */
+.score-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.score-table th {
+  font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted);
+  background: var(--bg); border-bottom: 2px solid var(--border);
+  padding: 10px 12px; text-align: left;
+}
+.score-table td {
+  padding: 10px 12px; border-bottom: 1px solid #eee;
+  font-family: 'DM Mono', monospace; font-size: 13px;
+}
+.score-table tr:hover td { background: #f9f9f7; }
+
+.rank-1 td:first-child { color: #d4a800; font-weight: 700; }
+.rank-2 td:first-child { color: #888; font-weight: 700; }
+.rank-3 td:first-child { color: #a0522d; font-weight: 700; }
+
+.score-val { font-weight: 700; color: var(--text); }
+.orig-val  { color: var(--purple); }
+.highlight-row td { background: #fffbe6 !important; }
+
+.empty-state {
+  text-align: center; padding: 48px 20px;
+  font-family: 'DM Mono', monospace; color: var(--muted); font-size: 13px;
+}
+.empty-state .big { font-size: 2rem; margin-bottom: 10px; }
+
+#status {
+  font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted);
+  margin-bottom: 16px; min-height: 18px;
+}
+#status.err { color: #c62828; }
+#status.ok  { color: #2e7d32; }
+
+/* Personal summary cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px; text-align: center;
+}
+.stat-card .val { font-size: 1.8rem; font-weight: 800; color: var(--tram-dark); }
+.stat-card .lbl { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-btn">🏠 Accueil</a>
+  <span class="nav-title">🏆 Tableau des scores</span>
+  <span style="width:90px"></span>
+</nav>
+
+<div class="wrap">
+  <h1>🏆 Scores</h1>
+  <div class="page-sub">CLASSEMENT GLOBAL · TES SCORES PERSO</div>
+
+  <div class="config-bar">
+    <div class="cf">
+      <label>BIN ID JSONBIN</label>
+      <input type="text" id="jbId" placeholder="6643f2e…">
+    </div>
+    <div class="cf">
+      <label>CLÉ API</label>
+      <input type="password" id="jbKey" placeholder="$2a$10$…">
+    </div>
+    <div class="cf">
+      <label>TON PSEUDO</label>
+      <input type="text" id="myPseudo" placeholder="Ton pseudo…" maxlength="24">
+    </div>
+    <button class="btn-load" onclick="charger()">Charger →</button>
+  </div>
+
+  <div id="status"></div>
+
+  <div class="tabs">
+    <div class="tab active" id="tab-global" onclick="switchTab('global')">🌍 Classement global</div>
+    <div class="tab" id="tab-perso"  onclick="switchTab('perso')">👤 Mes scores</div>
+  </div>
+
+  <div id="panel-global">
+    <div class="filter-bar">
+      <label>Filtrer par grille :</label>
+      <select id="filterGrille" onchange="afficherGlobal()">
+        <option value="">Toutes les grilles</option>
+      </select>
+    </div>
+    <div id="global-content">
+      <div class="empty-state"><div class="big">🏆</div>Entre ta clé JSONBin et clique sur Charger</div>
+    </div>
+  </div>
+
+  <div id="panel-perso" style="display:none">
+    <div id="perso-content">
+      <div class="empty-state"><div class="big">👤</div>Entre ton pseudo et ta clé JSONBin, puis clique sur Charger</div>
+    </div>
+  </div>
+</div>
+
 <script>
 let allScores = [];
 let currentTab = "global";
 
-// ✅ Restore saved values (FIX)
-const DEFAULT_ID = "69fc4ba6c0954111d8ebe1c4";
-const DEFAULT_KEY = "$2a$10$o86oj1l5sYM6xmHiaLa7d.4so6kMmCt0ezoUGPTZUOi5/JESBwAFa"; // pas master !
-
-const saved = { 
-  id: localStorage.getItem("jb_id") || DEFAULT_ID,
-  key: localStorage.getItem("jb_key") || DEFAULT_KEY,
+// Restore saved values
+const saved = {
+  id:     localStorage.getItem("jb_id")  || "",
+  key:    localStorage.getItem("jb_key") || "",
   pseudo: localStorage.getItem("tramdoku_pseudo") || ""
 };
+document.getElementById("jbId").value      = saved.id;
+document.getElementById("jbKey").value     = saved.key;
+document.getElementById("myPseudo").value  = saved.pseudo;
 
-document.getElementById("jbId").value = saved.id;
-document.getElementById("jbKey").value = saved.key;
-document.getElementById("myPseudo").value = saved.pseudo;
-
-// ✅ Save on input
-document.getElementById("jbId").addEventListener("input", e =>
-  localStorage.setItem("jb_id", e.target.value)
-);
-document.getElementById("jbKey").addEventListener("input", e =>
-  localStorage.setItem("jb_key", e.target.value)
-);
-document.getElementById("myPseudo").addEventListener("input", e =>
-  localStorage.setItem("tramdoku_pseudo", e.target.value)
-);
+document.getElementById("jbId").addEventListener("input",     e => localStorage.setItem("jb_id",  e.target.value));
+document.getElementById("jbKey").addEventListener("input",    e => localStorage.setItem("jb_key", e.target.value));
+document.getElementById("myPseudo").addEventListener("input", e => localStorage.setItem("tramdoku_pseudo", e.target.value));
 
 function switchTab(t) {
   currentTab = t;
   document.getElementById("tab-global").className = "tab" + (t === "global" ? " active" : "");
-  document.getElementById("tab-perso").className = "tab" + (t === "perso" ? " active" : "");
+  document.getElementById("tab-perso").className  = "tab" + (t === "perso"  ? " active" : "");
   document.getElementById("panel-global").style.display = t === "global" ? "" : "none";
-  document.getElementById("panel-perso").style.display = t === "perso" ? "" : "none";
+  document.getElementById("panel-perso").style.display  = t === "perso"  ? "" : "none";
 }
 
 async function charger() {
-  const id = document.getElementById("jbId").value.trim();
+  const id  = document.getElementById("jbId").value.trim();
   const key = document.getElementById("jbKey").value.trim();
-  const st = document.getElementById("status");
+  const st  = document.getElementById("status");
+  if (!id || !key) { st.textContent = "⚠️ Remplis le Bin ID et la clé API."; st.className = "err"; return; }
 
-  // ✅ FIX CONDITION
-  if (!id || !key) {
-    st.textContent = "⚠️ Remplis le Bin ID et la clé API.";
-    st.className = "err";
-    return;
-  }
-
-  st.textContent = "⏳ Chargement…";
-  st.className = "";
-
+  st.textContent = "⏳ Chargement…"; st.className = "";
   try {
-    const res = await fetch("https://api.jsonbin.io/v3/b/" + id + "/latest", {
+    const res  = await fetch("https://api.jsonbin.io/v3/b/" + id + "/latest", {
       headers: { "X-Master-Key": key }
     });
-
     if (!res.ok) throw new Error("HTTP " + res.status);
-
     const json = await res.json();
-    allScores = (json.record && json.record.scores) ? json.record.scores : [];
-
-    st.textContent = "✅ " + allScores.length + " score(s) chargé(s)";
-    st.className = "ok";
-
+    allScores  = (json.record && json.record.scores) ? json.record.scores : [];
+    st.textContent = "✅ " + allScores.length + " score(s) chargé(s)"; st.className = "ok";
     peuplerFiltreGrille();
     afficherGlobal();
     afficherPerso();
-
-  } catch (e) {
-    st.textContent = "❌ Erreur : " + e.message + " — vérifie ton Bin ID et ta clé.";
-    st.className = "err";
+  } catch(e) {
+    st.textContent = "❌ Erreur : " + e.message + " — vérifie ton Bin ID et ta clé."; st.className = "err";
   }
 }
 
 function peuplerFiltreGrille() {
   const sel = document.getElementById("filterGrille");
-
-  const grilles = [...new Set(allScores.map(s => s.grille))].sort((a, b) => a - b);
-
+  const grilles = [...new Set(allScores.map(s => s.grille))].sort((a,b) => a-b);
   sel.innerHTML = '<option value="">Toutes les grilles</option>';
-
   grilles.forEach(g => {
-    const titre = allScores.find(s => s.grille === g)?.titre || ("Grille #" + g);
-    sel.innerHTML += `<option value="${g}">${titre}</option>`;
+    const titre = allScores.find(s => s.grille === g)?.titre || "Grille #" + g;
+    sel.innerHTML += '<option value="' + g + '">Grille #' + g + (titre !== "Grille #" + g ? " – " + titre : "") + '</option>';
   });
 }
 
 function afficherGlobal() {
-  const filtre = document.getElementById("filterGrille").value;
-  const pseudo = document.getElementById("myPseudo").value.trim();
-
-  let scores = filtre
-    ? allScores.filter(s => String(s.grille) === String(filtre))
-    : allScores;
+  const filtre  = document.getElementById("filterGrille").value;
+  const pseudo  = document.getElementById("myPseudo").value.trim();
+  let scores    = filtre ? allScores.filter(s => String(s.grille) === String(filtre)) : allScores;
 
   if (!scores.length) {
     document.getElementById("global-content").innerHTML =
@@ -100,9 +248,9 @@ function afficherGlobal() {
     return;
   }
 
-  scores = [...scores].sort((a, b) => b.score - a.score);
-
-  const medals = ["🥇", "🥈", "🥉"];
+  // Sort by score desc
+  scores = [...scores].sort((a,b) => b.score - a.score);
+  const medals = ["🥇","🥈","🥉"];
 
   let h = '<table class="score-table"><thead><tr>';
   h += "<th>#</th><th>Joueur</th>";
@@ -111,64 +259,64 @@ function afficherGlobal() {
 
   scores.forEach((s, i) => {
     const isMe = pseudo && s.pseudo === pseudo;
-
-    h += `<tr class="rank-${i + 1}${isMe ? " highlight-row" : ""}">`;
-    h += `<td>${medals[i] || (i + 1)}</td>`;
-    h += `<td>${esc(s.pseudo)}${isMe ? " 👈" : ""}</td>`;
-    if (!filtre) h += `<td>Grille #${s.grille}</td>`;
-    h += `<td class="score-val">${s.score}</td>`;
-    h += `<td class="orig-val">✨ ${s.orig || 0}</td>`;
-    h += `<td>${s.date || "—"}</td>`;
+    h += '<tr class="rank-' + (i+1) + (isMe ? " highlight-row" : "") + '">';
+    h += "<td>" + (medals[i] || (i+1)) + "</td>";
+    h += "<td>" + esc(s.pseudo) + (isMe ? " 👈" : "") + "</td>";
+    if (!filtre) h += "<td>Grille #" + s.grille + "</td>";
+    h += '<td class="score-val">' + s.score + '</td>';
+    h += '<td class="orig-val">✨ ' + (s.orig || 0) + '</td>';
+    h += "<td>" + (s.date || "—") + "</td>";
     h += "</tr>";
   });
-
   h += "</tbody></table>";
-
   document.getElementById("global-content").innerHTML = h;
 }
 
 function afficherPerso() {
   const pseudo = document.getElementById("myPseudo").value.trim();
-
   if (!pseudo) {
     document.getElementById("perso-content").innerHTML =
-      '<div class="empty-state"><div class="big">👤</div>Entre ton pseudo</div>';
+      '<div class="empty-state"><div class="big">👤</div>Entre ton pseudo ci-dessus</div>';
     return;
   }
 
-  const mes = allScores
-    .filter(s => s.pseudo === pseudo)
-    .sort((a, b) => a.grille - b.grille);
-
+  const mes = allScores.filter(s => s.pseudo === pseudo).sort((a,b) => a.grille - b.grille);
   if (!mes.length) {
     document.getElementById("perso-content").innerHTML =
-      `<div class="empty-state"><div class="big">🎮</div>Aucun score pour « ${esc(pseudo)} »</div>`;
+      '<div class="empty-state"><div class="big">🎮</div>Aucun score trouvé pour « ' + esc(pseudo) + ' »<br>Joue une grille pour apparaître ici !</div>';
     return;
   }
 
-  const totalScore = mes.reduce((s, e) => s + e.score, 0);
-  const totalOrig = mes.reduce((s, e) => s + (e.orig || 0), 0);
-  const best = Math.max(...mes.map(e => e.score));
+  const totalScore = mes.reduce((s,e) => s + e.score, 0);
+  const totalOrig  = mes.reduce((s,e) => s + (e.orig || 0), 0);
+  const best       = Math.max(...mes.map(e => e.score));
 
   let h = '<div class="cards">';
-  h += `<div class="stat-card"><div class="val">${mes.length}</div><div class="lbl">Grilles jouées</div></div>`;
-  h += `<div class="stat-card"><div class="val">${totalScore}</div><div class="lbl">Score total</div></div>`;
-  h += `<div class="stat-card"><div class="val">${best}</div><div class="lbl">Meilleur score</div></div>`;
-  h += `<div class="stat-card"><div class="val" style="color:#5e35b1">${totalOrig}</div><div class="lbl">Originalité</div></div>`;
+  h += '<div class="stat-card"><div class="val">' + mes.length + '</div><div class="lbl">Grilles jouées</div></div>';
+  h += '<div class="stat-card"><div class="val">' + totalScore + '</div><div class="lbl">Score cumulé</div></div>';
+  h += '<div class="stat-card"><div class="val">' + best + '</div><div class="lbl">Meilleur score</div></div>';
+  h += '<div class="stat-card"><div class="val" style="color:#5e35b1">' + totalOrig + '</div><div class="lbl">Originalité totale</div></div>';
   h += '</div>';
 
+  h += '<table class="score-table"><thead><tr><th>Grille</th><th>Score</th><th>Originalité</th><th>Date</th></tr></thead><tbody>';
+  mes.forEach(s => {
+    h += "<tr>";
+    h += "<td>Grille #" + s.grille + (s.titre && s.titre !== "Grille #" + s.grille ? " <span style='color:#aaa;font-size:11px'>– " + esc(s.titre) + "</span>" : "") + "</td>";
+    h += '<td class="score-val">' + s.score + " / 1000</td>";
+    h += '<td class="orig-val">✨ ' + (s.orig || 0) + '</td>';
+    h += "<td>" + (s.date || "—") + "</td>";
+    h += "</tr>";
+  });
+  h += "</tbody></table>";
   document.getElementById("perso-content").innerHTML = h;
 }
 
 function esc(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// ✅ Auto-load OK
-if (saved.id && saved.key) {
-  charger();
-}
+// Auto-load if credentials already saved
+if (saved.id && saved.key) charger();
 </script>
+</body>
+</html>
