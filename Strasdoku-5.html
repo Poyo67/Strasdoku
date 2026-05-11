@@ -2,107 +2,228 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>TramDoku</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TramDoku – Grille #5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background:#fafafa; }
-table { border-collapse: collapse; margin: 20px auto; }
-th, td { border: 1px solid #444; padding: 8px; }
-th { background: #eee; }
-input { width: 100%; text-align: center; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Syne', sans-serif; background: #f4f4f2; color: #1a1a1a; min-height: 100vh; }
 
-.ok  { background: #c8f7c5; }
-.ko  { background: #f7c5c5; }
-.dup { background: #ffe0b2; }
+nav#tram-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #fff; border-bottom: 2px solid #d4a800;
+  padding: 10px 20px; position: sticky; top: 0; z-index: 50;
+}
+.nav-btn {
+  color: #d4a800; text-decoration: none; font-size: 13px; font-weight: 700;
+  padding: 6px 12px; border: 1px solid #d0d0cc; border-radius: 6px;
+  background: #f4f4f2; transition: all .15s;
+}
+.nav-btn:hover { background: #d4a800; color: #000; border-color: #d4a800; }
+.nav-center { display: flex; gap: 10px; align-items: center; }
+.nav-home { font-size: 20px; text-decoration: none; opacity: 0.7; transition: opacity .15s; }
+.nav-home:hover { opacity: 1; }
+.nav-scores {
+  color: #5e35b1; text-decoration: none; font-size: 12px; font-weight: 700;
+  font-family: 'DM Mono', monospace; padding: 5px 10px;
+  border: 1px solid #d0d0cc; border-radius: 6px; background: #f4f4f2; transition: all .15s;
+}
+.nav-scores:hover { background: #5e35b1; color: #fff; border-color: #5e35b1; }
 
-.barre-wrap { width: 340px; margin: 5px auto; display: flex; align-items: center; gap: 8px; }
-.barre-label { font-size: 13px; width: 90px; text-align: right; white-space: nowrap; }
-.barre { flex: 1; height: 18px; border: 1px solid #999; background: #e8e8e8; border-radius: 4px; overflow: hidden; }
-.progress-score { height: 100%; background: #4caf50; width: 0%; transition: width .3s; }
-.progress-orig  { height: 100%; background: #7c4dff; width: 0%; transition: width .3s; }
-.barre-val { font-size: 13px; width: 70px; text-align: left; }
+.game-wrap { padding: 24px 20px 60px; max-width: 700px; margin: 0 auto; }
+h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 4px; }
+.grid-label { font-family: 'DM Mono', monospace; font-size: 12px; color: #888; letter-spacing: .08em; margin-bottom: 4px; }
+.pseudo-display { font-family: 'DM Mono', monospace; font-size: 12px; color: #d4a800; margin-bottom: 16px; cursor: pointer; display: inline-block; }
+.pseudo-display:hover { text-decoration: underline; }
+
+table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+th, td { border: 1px solid #d0d0cc; padding: 8px 6px; }
+th { background: #ececea; color: #1a1a1a; font-size: 13px; }
+td { background: #fff; }
+input.cell-input {
+  width: 100%; background: transparent; border: none; outline: none;
+  color: #1a1a1a; font-family: 'DM Mono', monospace; font-size: 13px;
+  text-align: center; padding: 4px 0;
+}
+.ok  { background: #d4edda !important; }
+.ko  { background: #f8d7da !important; }
+.dup { background: #fff3cd !important; }
+
+.bars { margin: 16px 0; display: flex; flex-direction: column; gap: 8px; }
+.barre-wrap { display: flex; align-items: center; gap: 10px; }
+.barre-label { font-family: 'DM Mono', monospace; font-size: 12px; color: #666; width: 100px; text-align: right; }
+.barre { flex: 1; height: 16px; background: #e8e8e4; border: 1px solid #d0d0cc; border-radius: 4px; overflow: hidden; }
+.progress-score { height: 100%; background: #d4a800; width: 0%; transition: width .4s; }
+.progress-orig  { height: 100%; background: #7c4dff; width: 0%; transition: width .4s; }
+.barre-val { font-family: 'DM Mono', monospace; font-size: 12px; width: 80px; color: #555; }
+
+.btn-row { display: flex; gap: 10px; margin: 16px 0; flex-wrap: wrap; }
+button {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+  padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; transition: all .15s;
+}
+.btn-verify { background: #d4a800; color: #000; }
+.btn-verify:hover { background: #b88f00; }
+.btn-sol { background: #fff; color: #1a1a1a; border: 1px solid #d0d0cc; }
+.btn-sol:hover { border-color: #999; }
 
 #bonusZone {
-  display: none;
-  border: 2px dashed #fbc02d;
-  background: #fff8e1;
-  padding: 8px;
-  width: 280px;
-  margin: 15px auto;
+  display: none; border: 2px dashed #d4a800; background: #fffbe6;
+  padding: 12px; border-radius: 8px; margin: 16px 0; text-align: center;
+}
+#bonusZone input.bonus-inp {
+  width: 220px; background: #fff; border: 1px solid #d0d0cc; border-radius: 6px;
+  padding: 6px 10px; display: block; margin: 8px auto 0; color: #1a1a1a;
+  font-family: 'DM Mono', monospace; font-size: 13px; text-align: center; outline: none;
 }
 
-.regles { font-size: 12px; color: #666; margin-top: 25px; }
-.victoire { font-size: 20px; color: #2e7d32; font-weight: bold; display: none; margin: 10px 0; }
+.victoire { display:none; font-size:18px; font-weight:800; color:#2e7d32; margin:12px 0; text-align:center; }
 
-.orig-badge {
-  display: inline-block;
-  font-size: 11px;
-  background: #ede7f6;
-  color: #5e35b1;
-  border-radius: 8px;
-  padding: 1px 6px;
-  margin-left: 4px;
+#save-status {
+  font-family: 'DM Mono', monospace; font-size: 12px; color: #888;
+  text-align: center; margin: 4px 0; min-height: 18px;
 }
+#save-status.ok  { color: #2e7d32; }
+#save-status.err { color: #c62828; }
+
+#solutions { display:none; margin-top:10px; }
+#solutions table th { color: #5e35b1; background: #f3f0ff; }
+#solutions table td { font-family:'DM Mono',monospace; font-size:12px; color:#444; }
+.orig-badge { display:inline-block; font-size:10px; background:#ede7f6; color:#5e35b1; border-radius:6px; padding:1px 5px; margin-left:4px; }
+
+.regles { font-size:12px; color:#888; margin-top:28px; font-family:'DM Mono',monospace; line-height:1.8; border-top:1px solid #ddd; padding-top:16px; }
+
+.pm-overlay {
+  display: flex; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4); z-index: 200;
+  align-items: center; justify-content: center;
+}
+.pm-box {
+  background: #fff; border: 1px solid #d0d0cc; border-radius: 12px;
+  padding: 32px 28px; width: 340px; max-width: 95vw; text-align: center;
+}
+.pm-box h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 6px; }
+.pm-box p  { font-family: 'DM Mono', monospace; font-size: 12px; color: #888; margin-bottom: 20px; }
+.pm-box input.pseudo-inp {
+  width: 100%; font-family: 'DM Mono', monospace; font-size: 15px;
+  border: 2px solid #d0d0cc; border-radius: 8px; padding: 10px 14px;
+  outline: none; text-align: center; transition: border-color .2s; color: #1a1a1a; background: #f4f4f2;
+}
+.pm-box input.pseudo-inp:focus { border-color: #d4a800; }
+.pm-box .btn-play { margin-top: 14px; width: 100%; background: #d4a800; color: #000; font-size: 15px; padding: 12px; }
+.pm-box .btn-play:hover { background: #b88f00; }
 </style>
 </head>
 <body>
 
-<h1>🚋 TramDoku</h1>
-
-<div class="barre-wrap">
-  <span class="barre-label">🎯 Score</span>
-  <div class="barre"><div id="progress-score" class="progress-score"></div></div>
-  <span class="barre-val"><span id="score">0</span> / <span id="scoreMax">900</span></span>
-</div>
-<div class="barre-wrap">
-  <span class="barre-label">✨ Originalité</span>
-  <div class="barre"><div id="progress-orig" class="progress-orig"></div></div>
-  <span class="barre-val"><span id="origScore">0</span> / 780</span>
+<div class="pm-overlay" id="pseudoModal">
+  <div class="pm-box">
+    <h2>🚋 TramDoku</h2>
+    <p>Entre ton pseudo pour enregistrer ton score</p>
+    <input class="pseudo-inp" type="text" id="pseudoInput" placeholder="Ton pseudo…" maxlength="24"
+      onkeydown="if(event.key==='Enter') validerPseudo()">
+    <button class="btn-play" onclick="validerPseudo()">Jouer →</button>
+  </div>
 </div>
 
-<div id="jeu"></div>
+<nav id="tram-nav">
+  <a href="Strasdoku-4.html" class="nav-btn">← Grille #4</a>
+  <div class="nav-center">
+    <a href="index.html" class="nav-btn" title="Accueil">🏠 Accueil</a>
+    <a href="scores.html" class="nav-scores">🏆 Scores</a>
+  </div>
+</nav>
 
-<button onclick="verifier()">✅ Vérifier</button>
-<button onclick="toggleSolutions()">📋 Solutions</button>
+<div class="game-wrap">
+  <h1>🚋 TramDoku</h1>
+  <div class="grid-label">GRILLE #5 · GRILLE #5</div>
+  <div class="pseudo-display" id="pseudoDisplay" onclick="changerPseudo()">👤 —</div>
 
-<div id="solutions" style="display:none;"></div>
+  <div class="bars">
+    <div class="barre-wrap">
+      <span class="barre-label">🎯 Score</span>
+      <div class="barre"><div id="progress-score" class="progress-score"></div></div>
+      <span class="barre-val"><span id="score">0</span> / <span id="scoreMax">900</span></span>
+    </div>
+    <div class="barre-wrap">
+      <span class="barre-label">✨ Originalité</span>
+      <div class="barre"><div id="progress-orig" class="progress-orig"></div></div>
+      <span class="barre-val"><span id="origScore">0</span> / 780</span>
+    </div>
+  </div>
 
-<div id="bonusZone">
-  <strong>⭐ Case bonus</strong><br>
-  <span id="bonusLabel"></span><br>
-  <input id="bonusInput" placeholder="Station…" onkeydown="if(event.key==='Enter') verifierBonus()">
-  <button onclick="verifierBonus()">✅ Valider le bonus</button>
-</div>
+  <div id="jeu"></div>
 
-<div id="victoire" class="victoire">🎉 Bravo ! Score maximum atteint 🎉</div>
-<div class="regles">
-<strong>Règles du jeu</strong><br>
-• Chaque case doit contenir une station de tram de Strasbourg.<br>
-• Ligne = contrainte horizontale, colonne = verticale.<br>
-• Une case peut avoir plusieurs solutions : une seule suffit.<br>
-• Une station ne peut être utilisée qu'une seule fois.<br>
-• 900 points → déblocage de la case bonus (1000 max).<br>
-• La barre violette mesure l'originalité de tes réponses.
+  <div class="btn-row">
+    <button class="btn-verify" onclick="verifier()">✅ Vérifier</button>
+    <button class="btn-sol" onclick="toggleSolutions()">📋 Solutions</button>
+  </div>
+
+  <div id="save-status"></div>
+  <div id="solutions"></div>
+
+  <div id="bonusZone">
+    <strong>⭐ Case bonus</strong><br>
+    <span id="bonusLabel"></span>
+    <input class="bonus-inp" id="bonusInput" placeholder="Station…"
+      onkeydown="if(event.key==='Enter') verifierBonus()">
+    <button class="btn-verify" style="margin-top:8px" onclick="verifierBonus()">Valider</button>
+  </div>
+
+  <div id="victoire" class="victoire">🎉 Score maximum atteint !</div>
+
+  <div class="regles">
+    • Chaque case = une station de tram de Strasbourg.<br>
+    • Ligne = contrainte horizontale · Colonne = verticale.<br>
+    • Une case peut avoir plusieurs solutions : une seule suffit.<br>
+    • Une station ne peut être utilisée qu'une seule fois.<br>
+    • 900 points → case bonus débloquée (1000 max).<br>
+    • La barre violette mesure l'originalité de tes réponses.
+  </div>
 </div>
 
 <script>
-const data = {"cols":["Entre république et landsberg","contient un nom de ville","Contient 'me'"],"rows":["N'est pas un terminus","2 correspondances ","Plus loin de 3 stations de hdf"],"solutions":{"0,0":[{"nom":"Gallia","originalite":60},{"nom":"université","originalite":40},{"nom":"observatoire","originalite":50},{"nom":"esplanade","originalite":75},{"nom":"Winston churchill","originalite":100}],"0,1":[{"nom":"Kehl bahnhof","originalite":50},{"nom":"Parc d'activités d'eckobolsheim zénith","originalite":65},{"nom":"Hohberg","originalite":100},{"nom":"Saint-florent","originalite":100},{"nom":"Illkirch Lixenbuhl","originalite":75},{"nom":"Faubourg de Saverne","originalite":75},{"nom":"Lingolsheim alouettes","originalite":85},{"nom":"Ostwald hotel de ville","originalite":80},{"nom":"Phalsbourg","originalite":100},{"nom":"Copenhague","originalite":100},{"nom":"Londres","originalite":100},{"nom":"Vienne","originalite":100}],"0,2":[{"nom":"Homme de fer","originalite":1},{"nom":"Elmerforst","originalite":100},{"nom":"Krimmeri stade de la meinau","originalite":60},{"nom":"Graviere stade de la meinau","originalite":70},{"nom":"melanie","originalite":75},{"nom":"Droits de l'homme","originalite":95},{"nom":"Clemenceau","originalite":100}],"1,0":[{"nom":"Esplanade","originalite":5}],"1,1":[{"nom":"Campus d'illkirch","originalite":25},{"nom":"Saint-florent","originalite":95}],"1,2":[{"nom":"Krimmeri stade de la meinau","originalite":60},{"nom":"Parlement européen","originalite":80}],"2,0":[{"nom":"université","originalite":40},{"nom":"observatoire","originalite":50},{"nom":"esplanade","originalite":75},{"nom":"Winston churchill","originalite":100}],"2,1":[{"nom":"Kehl bahnhof","originalite":50},{"nom":"Parc d'activités d'eckobolsheim zénith","originalite":65},{"nom":"Hohberg","originalite":100},{"nom":"Saint-florent","originalite":100},{"nom":"Illkirch Lixenbuhl","originalite":75},{"nom":"Faubourg de Saverne","originalite":75},{"nom":"Lingolsheim alouettes","originalite":85},{"nom":"Ostwald hotel de ville","originalite":80},{"nom":"Phalsbourg","originalite":100},{"nom":"Copenhague","originalite":100},{"nom":"Londres","originalite":100},{"nom":"Vienne","originalite":100},{"nom":"Wolfisheim Henri rendu","originalite":50},{"nom":"Hoenheim gare","originalite":50},{"nom":"Rotterdam","originalité":100},{"nom":"Kehl Rathaus","originalite":30},{"nom":"Campus d'illkirch","originalite":30},{"nom":"Lingolsheim Tiergaertel","originalite":45}],"2,2":[{"nom":"Graviere stade de la meinau","originalite":50},{"nom":"Krimmeri stade de la meinau ","originalite":25},{"nom":"Parlement européen","originalite":35},{"nom":"Mélanie","originalite":100},{"nom":"Chambre de métiers","originalite":100},{"nom":"Clemenceau","originalite":100},{"nom":"Elmerforst","originalite":100}]},"bonus":{"label":"Station emblématique de Strasbourg","points":100,"solutions":["Homme de fer","Broglie","Republique"]}};
+const GRID_NUM   = 5;
+const GRID_TITLE = "Grille #5";
+const JSONBIN_ID  = "69fc4ba6c0954111d8ebe1c4";
+const JSONBIN_KEY = "$2a$10$o86oj1l5sYM6xmHiaLa7d.4so6kMmCt0ezoUGPTZUOi5/JESBwAFa";
+const data     = {"cols":["Entre république et landsberg","contient un nom de ville","Contient 'me'"],"rows":["N'est pas un terminus","2 correspondances ","Plus loin de 3 stations de hdf"],"solutions":{"0,0":[{"nom":"Gallia","originalite":60},{"nom":"université","originalite":40},{"nom":"observatoire","originalite":50},{"nom":"esplanade","originalite":75},{"nom":"Winston churchill","originalite":100}],"0,1":[{"nom":"Kehl bahnhof","originalite":50},{"nom":"Parc d'activités d'eckobolsheim zénith","originalite":65},{"nom":"Hohberg","originalite":100},{"nom":"Saint-florent","originalite":100},{"nom":"Illkirch Lixenbuhl","originalite":75},{"nom":"Faubourg de Saverne","originalite":75},{"nom":"Lingolsheim alouettes","originalite":85},{"nom":"Ostwald hotel de ville","originalite":80},{"nom":"Phalsbourg","originalite":100},{"nom":"Copenhague","originalite":100},{"nom":"Londres","originalite":100},{"nom":"Vienne","originalite":100}],"0,2":[{"nom":"Homme de fer","originalite":1},{"nom":"Elmerforst","originalite":100},{"nom":"Krimmeri stade de la meinau","originalite":60},{"nom":"Graviere stade de la meinau","originalite":70},{"nom":"melanie","originalite":75},{"nom":"Droits de l'homme","originalite":95},{"nom":"Clemenceau","originalite":100}],"1,0":[{"nom":"Esplanade","originalite":5}],"1,1":[{"nom":"Campus d'illkirch","originalite":25},{"nom":"Saint-florent","originalite":95}],"1,2":[{"nom":"Krimmeri stade de la meinau","originalite":60},{"nom":"Parlement européen","originalite":80}],"2,0":[{"nom":"université","originalite":40},{"nom":"observatoire","originalite":50},{"nom":"esplanade","originalite":75},{"nom":"Winston churchill","originalite":100}],"2,1":[{"nom":"Kehl bahnhof","originalite":50},{"nom":"Parc d'activités d'eckobolsheim zénith","originalite":65},{"nom":"Hohberg","originalite":100},{"nom":"Saint-florent","originalite":100},{"nom":"Illkirch Lixenbuhl","originalite":75},{"nom":"Faubourg de Saverne","originalite":75},{"nom":"Lingolsheim alouettes","originalite":85},{"nom":"Ostwald hotel de ville","originalite":80},{"nom":"Phalsbourg","originalite":100},{"nom":"Copenhague","originalite":100},{"nom":"Londres","originalite":100},{"nom":"Vienne","originalite":100},{"nom":"Wolfisheim Henri rendu","originalite":50},{"nom":"Hoenheim gare","originalite":50},{"nom":"Rotterdam","originalité":100},{"nom":"Kehl Rathaus","originalite":30},{"nom":"Campus d'illkirch","originalite":30},{"nom":"Lingolsheim Tiergaertel","originalite":45}],"2,2":[{"nom":"Graviere stade de la meinau","originalite":50},{"nom":"Krimmeri stade de la meinau ","originalite":25},{"nom":"Parlement européen","originalite":35},{"nom":"Mélanie","originalite":100},{"nom":"Chambre de métiers","originalite":100},{"nom":"Clemenceau","originalite":100},{"nom":"Elmerforst","originalite":100}]},"bonus":{"label":"Station emblématique de Strasbourg","points":100,"solutions":["Homme de fer","Broglie","Republique"]}};
 const ORIG_MAX = 780;
-let scoreMax = 900;
-let scoreBase = 0;
-let origBase = 0;
-let bonusUnlocked = false;
-let bonusValidated = false;
 
-function n(t) {
-  return t.toLowerCase().normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+let scoreMax = 900, scoreBase = 0, origBase = 0;
+let bonusUnlocked = false, bonusValidated = false;
+let solutionsVues = false;
+let pseudo = "";
+
+function validerPseudo() {
+  const v = document.getElementById("pseudoInput").value.trim();
+  if (!v) { document.getElementById("pseudoInput").style.borderColor = "#c62828"; return; }
+  pseudo = v;
+  localStorage.setItem("tramdoku_pseudo", pseudo);
+  document.getElementById("pseudoModal").style.display = "none";
+  document.getElementById("pseudoDisplay").textContent = "👤 " + pseudo + "  (changer)";
+}
+function changerPseudo() {
+  document.getElementById("pseudoInput").value = pseudo;
+  document.getElementById("pseudoModal").style.display = "flex";
+  setTimeout(() => document.getElementById("pseudoInput").focus(), 50);
+}
+const savedPseudo = localStorage.getItem("tramdoku_pseudo");
+if (savedPseudo) {
+  pseudo = savedPseudo;
+  document.getElementById("pseudoInput").value = savedPseudo;
+  document.getElementById("pseudoModal").style.display = "none";
+  document.getElementById("pseudoDisplay").textContent = "👤 " + pseudo + "  (changer)";
+} else {
+  setTimeout(() => document.getElementById("pseudoInput").focus(), 100);
 }
 
+function n(t) {
+  return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim();
+}
 function parseSol(s) {
-  if (typeof s === "object") return { nom: s.nom, orig: s.originalite || 0 };
-  return { nom: s, orig: 0 };
+  return typeof s === "object" ? { nom: s.nom, orig: s.originalite || 0 } : { nom: s, orig: 0 };
 }
 
 function afficher() {
@@ -111,7 +232,7 @@ function afficher() {
   h += "</tr>";
   data.rows.forEach((r,i) => {
     h += "<tr><th>" + r + "</th>";
-    data.cols.forEach((_,j) => h += "<td><input data-k='"+i+","+j+"'></td>");
+    data.cols.forEach((_,j) => h += "<td><input class='cell-input' data-k='"+i+","+j+"'></td>");
     h += "</tr>";
   });
   h += "</table>";
@@ -122,28 +243,48 @@ function updateBars(score, orig) {
   document.getElementById("score").textContent = score;
   document.getElementById("origScore").textContent = orig;
   document.getElementById("progress-score").style.width = (score / scoreMax * 100) + "%";
-  document.getElementById("progress-orig").style.width = ORIG_MAX > 0 ? (orig / ORIG_MAX * 100) + "%" : "0%";
+  document.getElementById("progress-orig").style.width  = ORIG_MAX > 0 ? (orig / ORIG_MAX * 100) + "%" : "0%";
+}
+
+async function sauvegarderScore(score, orig) {
+  if (!JSONBIN_ID || !JSONBIN_KEY) return;
+  const st = document.getElementById("save-status");
+  st.textContent = "⏳ Sauvegarde…"; st.className = "";
+  try {
+    const res  = await fetch("https://api.jsonbin.io/v3/b/" + JSONBIN_ID + "/latest", {
+      headers: { "X-Master-Key": JSONBIN_KEY }
+    });
+    const json = await res.json();
+    let scores = (json.record && json.record.scores) ? json.record.scores : [];
+    const idx  = scores.findIndex(s => s.pseudo === pseudo && s.grille === GRID_NUM);
+    const entry = { pseudo, grille: GRID_NUM, titre: GRID_TITLE, score, orig,
+                    date: new Date().toLocaleDateString("fr-FR") };
+    if (idx >= 0) { if (score > scores[idx].score) scores[idx] = entry; }
+    else scores.push(entry);
+    await fetch("https://api.jsonbin.io/v3/b/" + JSONBIN_ID, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "X-Master-Key": JSONBIN_KEY },
+      body: JSON.stringify({ scores })
+    });
+    st.textContent = "✅ Score sauvegardé !"; st.className = "ok";
+  } catch(e) {
+    st.textContent = "⚠️ Sauvegarde impossible"; st.className = "err";
+  }
 }
 
 function verifier() {
-  let score = 0;
-  let orig = 0;
-  let used = {};
-  let doublon = false;
+  let score = 0, orig = 0, used = {}, doublon = false;
   document.getElementById("victoire").style.display = "none";
-
-  document.querySelectorAll("input[data-k]").forEach(inp => {
-    inp.className = "";
-    const v = n(inp.value);
-    if (!v) return;
-    if (used[v]) { inp.className = "dup"; doublon = true; return; }
+  document.querySelectorAll("input.cell-input").forEach(inp => {
+    inp.parentElement.className = "";
+    const v = n(inp.value); if (!v) return;
+    if (used[v]) { inp.parentElement.className = "dup"; doublon = true; return; }
     used[v] = true;
     const sols = (data.solutions[inp.dataset.k] || []).map(parseSol);
     const match = sols.find(s => n(s.nom) === v);
-    if (match) { inp.className = "ok"; score += 100; orig += match.orig; }
-    else inp.className = "ko";
+    if (match) { inp.parentElement.className = "ok"; score += 100; orig += match.orig; }
+    else inp.parentElement.className = "ko";
   });
-
   if (score === 900 && !doublon && data.bonus && !bonusUnlocked) {
     bonusUnlocked = true;
     scoreMax = 900 + data.bonus.points;
@@ -151,27 +292,29 @@ function verifier() {
     document.getElementById("bonusZone").style.display = "block";
     document.getElementById("bonusLabel").textContent = data.bonus.label;
   }
-
-  scoreBase = score;
-  origBase = orig;
-  updateBars(score + (bonusValidated ? data.bonus.points : 0), orig);
+  scoreBase = score; origBase = orig;
+  const total = score + (bonusValidated ? data.bonus.points : 0);
+  updateBars(total, orig);
+  if (score > 0 && !solutionsVues) sauvegarderScore(total, orig);
+  else if (score > 0 && solutionsVues) {
+    const st = document.getElementById("save-status");
+    st.textContent = "⚠️ Score non sauvegardé : solutions consultées"; st.className = "err";
+  }
 }
 
 function verifierBonus() {
   if (!bonusUnlocked) return;
   const input = document.getElementById("bonusInput");
-  const v = n(input.value);
-  input.className = "";
-  if (!v) return;
+  const v = n(input.value); input.style.background = ""; if (!v) return;
   const sols = (data.bonus.solutions || []).map(n);
   if (sols.includes(v)) {
-    bonusValidated = true;
-    input.className = "ok";
+    bonusValidated = true; input.style.background = "#d4edda";
     document.getElementById("victoire").style.display = "block";
-    updateBars(scoreBase + data.bonus.points, origBase);
+    const total = scoreBase + data.bonus.points;
+    updateBars(total, origBase);
+    if (!solutionsVues) sauvegarderScore(total, origBase);
   } else {
-    bonusValidated = false;
-    input.className = "ko";
+    bonusValidated = false; input.style.background = "#f8d7da";
     document.getElementById("victoire").style.display = "none";
     updateBars(scoreBase, origBase);
   }
@@ -180,6 +323,14 @@ function verifierBonus() {
 function toggleSolutions() {
   const d = document.getElementById("solutions");
   if (d.style.display === "block") { d.style.display = "none"; return; }
+  // Mark solutions as seen — block further saves
+  if (!solutionsVues) {
+    solutionsVues = true;
+    const btn = document.querySelector(".btn-sol");
+    if (btn) { btn.style.opacity = "0.5"; btn.title = "Solutions vues — score non sauvegardable"; }
+    const st = document.getElementById("save-status");
+    st.textContent = "⚠️ Solutions consultées — ton score ne sera plus sauvegardé"; st.className = "err";
+  }
   let h = "<table><tr><th></th>";
   data.cols.forEach(c => h += "<th>" + c + "</th>");
   h += "</tr>";
@@ -188,18 +339,15 @@ function toggleSolutions() {
     data.cols.forEach((_,j) => {
       const sols = (data.solutions[i+","+j] || []).map(parseSol);
       h += "<td>" + sols.map(s =>
-        s.nom + (s.orig > 0 ? '<span class="orig-badge">✨ ' + s.orig + '</span>' : '')
+        s.nom + (s.orig > 0 ? '<span class="orig-badge">✨' + s.orig + '</span>' : '')
       ).join("<br><em>ou</em><br>") + "</td>";
     });
     h += "</tr>";
   });
-  h += "</table>";
-  d.innerHTML = h;
-  d.style.display = "block";
+  h += "</table>"; d.innerHTML = h; d.style.display = "block";
 }
 
 afficher();
 </script>
-
 </body>
 </html>
