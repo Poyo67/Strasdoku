@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TramQuiz – Strasbourg</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --tram: #d4a800;
+  --tram-dark: #b88f00;
+  --bg: #f4f4f2;
+  --surface: #fff;
+  --border: #d0d0cc;
+  --text: #1a1a1a;
+  --muted: #777;
+  --ok: #2e7d32;
+  --ko: #c62828;
+  --ok-bg: #d4edda;
+  --ko-bg: #f8d7da;
+  --A: #e53935; --B: #1e88e5; --C: #f57c00;
+  --D: #2e7d32; --E: #6a1b9a; --F: #66bb6a; --G: #f9a825; --H: #6d1f2f;
+}
+body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* NAV */
+nav {
+  background: var(--surface); border-bottom: 2px solid var(--tram);
+  padding: 10px 20px; display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 1000;
+}
+.nav-logo { font-weight: 800; font-size: 16px; }
+.nav-logo span { background: var(--tram); color: #000; padding: 2px 8px; border-radius: 4px; margin-right: 6px; }
+.nav-home { color: var(--tram); text-decoration: none; font-size: 13px; font-weight: 700; padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); transition: all .15s; }
+.nav-home:hover { background: var(--tram); color: #000; }
+
+/* SCREEN SYSTEM */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ── ACCUEIL ── */
+#screen-home {
+  max-width: 680px; margin: 0 auto; padding: 40px 20px 80px;
+}
+.home-title { font-size: 2rem; font-weight: 800; margin-bottom: 6px; }
+.home-sub { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 36px; letter-spacing: .08em; }
+
+.mode-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 32px; }
+.mode-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 22px 18px 18px; cursor: pointer; transition: all .15s; position: relative; overflow: hidden;
+}
+.mode-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--tram); transform: scaleX(0); transition: transform .2s; }
+.mode-card:hover { border-color: var(--tram); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.mode-card:hover::before { transform: scaleX(1); }
+.mode-icon { font-size: 2rem; margin-bottom: 10px; }
+.mode-name { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+.mode-desc { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+.difficulty-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.diff-btn {
+  font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700;
+  padding: 6px 14px; border: 1px solid var(--border); border-radius: 20px;
+  background: var(--surface); cursor: pointer; transition: all .15s; color: var(--text);
+}
+.diff-btn.active, .diff-btn:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
+.diff-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+
+/* ── GAME LAYOUT ── */
+#game-wrap { display: flex; flex-direction: column; height: calc(100vh - 49px); }
+#map { flex: 1; min-height: 0; z-index: 1; }
+
+.game-panel {
+  background: var(--surface); border-top: 2px solid var(--border);
+  padding: 14px 16px; z-index: 10;
+}
+
+.game-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.game-mode-badge {
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700;
+  background: var(--text); color: var(--bg); padding: 3px 9px; border-radius: 4px;
+  letter-spacing: .06em;
+}
+.game-progress { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+.game-score { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 700; margin-left: auto; }
+
+/* Timer */
+.timer-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.timer-bar { flex: 1; height: 6px; background: #e8e8e4; border-radius: 3px; overflow: hidden; }
+.timer-fill { height: 100%; background: var(--tram); transition: width .5s linear, background .5s; border-radius: 3px; }
+.timer-fill.urgent { background: var(--ko); }
+.timer-val { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 700; width: 36px; text-align: right; }
+.timer-val.urgent { color: var(--ko); }
+
+/* Question */
+.question-box { margin-bottom: 10px; }
+.question-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 4px; letter-spacing: .06em; }
+.question-text { font-size: 1.2rem; font-weight: 800; line-height: 1.2; }
+.question-hint { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* Input mode */
+.input-row { display: flex; gap: 8px; }
+.input-row input {
+  flex: 1; font-family: 'DM Mono', monospace; font-size: 14px;
+  background: var(--bg); color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 9px 12px; outline: none; transition: border-color .2s;
+}
+.input-row input:focus { border-color: var(--tram); }
+.btn-submit {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+  padding: 9px 18px; background: var(--tram); color: #000; border: none;
+  border-radius: 6px; cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.btn-submit:hover { background: var(--tram-dark); }
+
+/* Feedback */
+.feedback {
+  font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 700;
+  padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; display: none;
+}
+.feedback.ok  { background: var(--ok-bg); color: var(--ok); display: block; }
+.feedback.ko  { background: var(--ko-bg); color: var(--ko); display: block; }
+
+.btn-next {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+  padding: 9px 20px; background: var(--text); color: var(--bg); border: none;
+  border-radius: 6px; cursor: pointer; transition: all .15s; display: none;
+}
+.btn-next:hover { opacity: 0.85; }
+
+/* Mode 3 — Complète */
+.complete-input-wrap { position: relative; }
+.complete-stats { display: flex; gap: 16px; margin-bottom: 8px; flex-wrap: wrap; }
+.cstat { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+.cstat strong { color: var(--text); font-size: 15px; }
+
+/* Results screen */
+#screen-results { max-width: 500px; margin: 0 auto; padding: 40px 20px 80px; text-align: center; }
+.results-score { font-size: 4rem; font-weight: 800; color: var(--tram-dark); margin: 20px 0 4px; }
+.results-label { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+.results-details { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; text-align: left; }
+.results-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-family: 'DM Mono', monospace; font-size: 13px; }
+.results-row:last-child { border: none; }
+.btn-retry {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px;
+  padding: 12px 28px; background: var(--tram); color: #000; border: none;
+  border-radius: 8px; cursor: pointer; transition: all .15s; margin: 6px;
+}
+.btn-retry:hover { background: var(--tram-dark); }
+.btn-home-end {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px;
+  padding: 12px 28px; background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+  transition: all .15s; margin: 6px;
+}
+.btn-home-end:hover { border-color: var(--tram); color: var(--tram-dark); }
+
+/* Line dot */
+.line-dot {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  margin-right: 5px; vertical-align: middle;
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo"><span>🚋</span>TramQuiz</div>
+  <a href="index.html" class="nav-home">🏠 Accueil</a>
+</nav>
+
+<!-- ══ ÉCRAN ACCUEIL ══ -->
+<div id="screen-home" class="screen active">
+  <h1 class="home-title">🗺️ TramQuiz</h1>
+  <div class="home-sub">CONNAIS-TU LE RÉSEAU CTS PAR CŒUR ?</div>
+
+  <div class="diff-label">DIFFICULTÉ (zone de tolérance)</div>
+  <div class="difficulty-row">
+    <div class="diff-btn active" data-diff="facile" onclick="setDiff(this)">😌 Facile <span style="font-size:10px;opacity:.7">(300m)</span></div>
+    <div class="diff-btn" data-diff="normal" onclick="setDiff(this)">🧠 Normal <span style="font-size:10px;opacity:.7">(150m)</span></div>
+    <div class="diff-btn" data-diff="expert" onclick="setDiff(this)">🔥 Expert <span style="font-size:10px;opacity:.7">(80m)</span></div>
+  </div>
+  <br>
+
+  <div class="mode-cards">
+    <div class="mode-card" onclick="startMode('localise')">
+      <div class="mode-icon">📍</div>
+      <div class="mode-name">Localise</div>
+      <div class="mode-desc">On te donne un nom de station → clique sur la carte au bon endroit</div>
+    </div>
+    <div class="mode-card" onclick="startMode('identifie')">
+      <div class="mode-icon">🔍</div>
+      <div class="mode-name">Identifie</div>
+      <div class="mode-desc">Un marqueur apparaît sur la carte → tape le nom de la station</div>
+    </div>
+    <div class="mode-card" onclick="startMode('complete')">
+      <div class="mode-icon">✍️</div>
+      <div class="mode-name">Complète</div>
+      <div class="mode-desc">Retrouve toutes les stations du réseau avant la fin du chrono</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ÉCRAN JEU ══ -->
+<div id="screen-game" class="screen">
+  <div id="game-wrap">
+    <div id="map"></div>
+    <div class="game-panel">
+
+      <div class="game-header">
+        <span class="game-mode-badge" id="mode-badge">LOCALISE</span>
+        <span class="game-progress" id="progress-txt">Question 1 / 15</span>
+        <span class="game-score" id="score-txt">✅ 0 &nbsp; ❌ 0</span>
+      </div>
+
+      <div class="timer-wrap">
+        <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+        <div class="timer-val" id="timer-val">15</div>
+      </div>
+
+      <!-- Mode Localise -->
+      <div id="panel-localise">
+        <div class="question-box">
+          <div class="question-label">OÙ SE TROUVE CETTE STATION ?</div>
+          <div class="question-text" id="q-station-name">—</div>
+          <div class="question-hint" id="q-station-hint"></div>
+        </div>
+        <div class="feedback" id="fb-localise"></div>
+        <button class="btn-next" id="btn-next-localise" onclick="nextQuestion()">Question suivante →</button>
+      </div>
+
+      <!-- Mode Identifie -->
+      <div id="panel-identifie" style="display:none">
+        <div class="question-box">
+          <div class="question-label">QUELLE EST CETTE STATION ?</div>
+        </div>
+        <div class="feedback" id="fb-identifie"></div>
+        <div class="input-row" id="identifie-input-row">
+          <input type="text" id="identifie-input" placeholder="Nom de la station…"
+            onkeydown="if(event.key==='Enter') submitIdentifie()" autocomplete="off">
+          <button class="btn-submit" onclick="submitIdentifie()">→</button>
+        </div>
+        <button class="btn-next" id="btn-next-identifie" onclick="nextQuestion()">Question suivante →</button>
+      </div>
+
+      <!-- Mode Complète -->
+      <div id="panel-complete" style="display:none">
+        <div class="complete-stats">
+          <div class="cstat">Trouvées <strong id="found-count">0</strong> / <strong id="total-count">0</strong></div>
+          <div class="cstat">Restantes <strong id="remaining-count">0</strong></div>
+        </div>
+        <div class="complete-input-wrap">
+          <div class="input-row">
+            <input type="text" id="complete-input" placeholder="Tape le nom d'une station…"
+              onkeydown="onCompleteKey(event)" autocomplete="off" autocorrect="off" spellcheck="false">
+            <button class="btn-submit" onclick="submitComplete()">→</button>
+          </div>
+        </div>
+        <div class="feedback" id="fb-complete" style="margin-top:8px"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ RÉSULTATS ══ -->
+<div id="screen-results" class="screen">
+  <div style="font-size:3rem;margin-bottom:10px" id="results-emoji">🎉</div>
+  <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:6px" id="results-title">Bravo !</h2>
+  <div class="results-score" id="results-score">12/15</div>
+  <div class="results-label" id="results-label">bonnes réponses</div>
+  <div class="results-details" id="results-details"></div>
+  <div>
+    <button class="btn-retry" onclick="retryMode()">🔄 Rejouer</button>
+    <button class="btn-home-end" onclick="goHome()">🏠 Accueil</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// DONNÉES — toutes les stations CTS
+// ══════════════════════════════════════════
+const STATIONS = [
+  // ═══════════════════════════════════════════════════════════════
+  // BASE DE DONNÉES DES STATIONS
+  // Format : { nom: "Nom exact", lat: 48.XXXX, lng: 7.XXXX, lignes: ["X"] }
+  // ⚠️  Coordonnées à vérifier/corriger directement ici
+  // ═══════════════════════════════════════════════════════════════
+
+  // LIGNE A
+  { nom: "Graffenstaden",              lat: 48.5241, lng: 7.7214, lignes: ["A"] },
+  { nom: "Parc Malraux",               lat: 48.5290, lng: 7.7246, lignes: ["A"] },
+  { nom: "Cours de l'Illiade",         lat: 48.5329, lng: 7.7264, lignes: ["A"] },
+  { nom: "Illkirch Lixenbuhl",         lat: 48.5380, lng: 7.7282, lignes: ["A"] },
+  { nom: "Baggersee",                  lat: 48.5431, lng: 7.7318, lignes: ["A", "E"] },
+  { nom: "Colonne",                    lat: 48.5490, lng: 7.7348, lignes: ["A", "E"] },
+  { nom: "Leclerc",                    lat: 48.5535, lng: 7.7370, lignes: ["A", "E"] },
+  { nom: "Campus d'Illkirch",          lat: 48.5565, lng: 7.7388, lignes: ["E"] },
+  { nom: "Krimmeri - Stade de la Meinau", lat: 48.5601, lng: 7.7403, lignes: ["A", "E"] },
+  { nom: "Lycée Couffignal",           lat: 48.5641, lng: 7.7418, lignes: ["A", "E"] },
+  { nom: "Schluthfeld",                lat: 48.5673, lng: 7.7418, lignes: ["A", "E"] },
+  { nom: "Hohwart",                    lat: 48.5711, lng: 7.7421, lignes: ["A", "E"] },
+  { nom: "Étoile Bourse",              lat: 48.5741, lng: 7.7432, lignes: ["A", "D"] },
+  { nom: "Étoile Polygone",            lat: 48.5756, lng: 7.7459, lignes: ["D", "E"] },
+  { nom: "Ancienne Synagogue - Les Halles", lat: 48.5787, lng: 7.7479, lignes: ["A", "D"] },
+  { nom: "Homme de Fer",               lat: 48.5832, lng: 7.7469, lignes: ["A", "B", "C", "D", "F"] },
+  { nom: "Langstross Grand'Rue",       lat: 48.5810, lng: 7.7497, lignes: ["A", "D"] },
+  { nom: "Porte de l'Hôpital",         lat: 48.5787, lng: 7.7537, lignes: ["A", "D"] },
+  { nom: "Dante",                      lat: 48.5767, lng: 7.7579, lignes: ["A", "D"] },
+  { nom: "Ducs d'Alsace",              lat: 48.5748, lng: 7.7619, lignes: ["A", "D"] },
+  { nom: "Rotonde",                    lat: 48.5733, lng: 7.7659, lignes: ["A", "D"] },
+  { nom: "Saint-Florent",              lat: 48.5783, lng: 7.7348, lignes: ["A", "D"] },
+  { nom: "Hôpital de Hautepierre",     lat: 48.5837, lng: 7.7210, lignes: ["A", "D"] },
+  { nom: "Cervantès",                  lat: 48.5875, lng: 7.7168, lignes: ["A"] },
+  { nom: "Le Galet",                   lat: 48.5918, lng: 7.7133, lignes: ["A"] },
+  { nom: "Parc des Sports",            lat: 48.5961, lng: 7.7102, lignes: ["A"] },
+
+  // LIGNE B
+  { nom: "Lingolsheim Tiergaertel",    lat: 48.5459, lng: 7.6978, lignes: ["B"] },
+  { nom: "Lingolsheim Alouettes",      lat: 48.5498, lng: 7.7019, lignes: ["B"] },
+  { nom: "Bohrie",                     lat: 48.5541, lng: 7.7054, lignes: ["B"] },
+  { nom: "Ostwald Hôtel de Ville",     lat: 48.5487, lng: 7.7148, lignes: ["B"] },
+  { nom: "Wihrel",                     lat: 48.5529, lng: 7.7175, lignes: ["B"] },
+  { nom: "Elmerforst",                 lat: 48.5571, lng: 7.7205, lignes: ["B"] },
+  { nom: "Montagne Verte",             lat: 48.5629, lng: 7.7249, lignes: ["B"] },
+  { nom: "Elsau",                      lat: 48.5671, lng: 7.7278, lignes: ["B"] },
+  { nom: "Alt Winmärik",               lat: 48.5742, lng: 7.7390, lignes: ["B", "F"] },
+  { nom: "Faubourg National",          lat: 48.5797, lng: 7.7400, lignes: ["B", "F"] },
+  { nom: "Broglie",                    lat: 48.5841, lng: 7.7491, lignes: ["B", "C", "F"] },
+  { nom: "République",                 lat: 48.5873, lng: 7.7491, lignes: ["B", "C", "E", "F"] },
+  { nom: "Lycée Kléber",               lat: 48.5900, lng: 7.7472, lignes: ["B", "E"] },
+  { nom: "Parc du Contades",           lat: 48.5920, lng: 7.7519, lignes: ["B", "E"] },
+  { nom: "Wacken",                     lat: 48.5941, lng: 7.7578, lignes: ["B", "E"] },
+  { nom: "Parlement Européen",         lat: 48.5978, lng: 7.7629, lignes: ["E"] },
+  { nom: "Droits de l'Homme",          lat: 48.6011, lng: 7.7649, lignes: ["E"] },
+  { nom: "Boecklin",                   lat: 48.6051, lng: 7.7631, lignes: ["E"] },
+  { nom: "Robertsau l'Escale",         lat: 48.6118, lng: 7.7618, lignes: ["E"] },
+  { nom: "Laiterie",                   lat: 48.5841, lng: 7.7369, lignes: ["B"] },
+  { nom: "Musée d'Art Moderne",        lat: 48.5808, lng: 7.7538, lignes: ["B"] },
+  { nom: "Rives de l'Aar",             lat: 48.5979, lng: 7.7338, lignes: ["B"] },
+  { nom: "Futura Glacière",            lat: 48.6009, lng: 7.7301, lignes: ["B"] },
+  { nom: "Pont Phario",                lat: 48.6038, lng: 7.7348, lignes: ["B"] },
+  { nom: "Le Marais",                  lat: 48.6068, lng: 7.7371, lignes: ["B"] },
+  { nom: "Martin Schongauer",          lat: 48.6099, lng: 7.7419, lignes: ["B"] },
+  { nom: "Lycée Marc Bloch",           lat: 48.6129, lng: 7.7441, lignes: ["B"] },
+  { nom: "Général de Gaulle",          lat: 48.6158, lng: 7.7459, lignes: ["B"] },
+  { nom: "Le Ried",                    lat: 48.6178, lng: 7.7472, lignes: ["B"] },
+  { nom: "Hœnheim Gare",              lat: 48.6211, lng: 7.7491, lignes: ["B"] },
+
+  // LIGNE C
+  { nom: "Neuhof Rodolphe Reuss",      lat: 48.5511, lng: 7.7699, lignes: ["C"] },
+  { nom: "Kibitzenau",                 lat: 48.5551, lng: 7.7668, lignes: ["C"] },
+  { nom: "Saint-Christophe",          lat: 48.5591, lng: 7.7629, lignes: ["C"] },
+  { nom: "Gravière",                   lat: 48.5628, lng: 7.7601, lignes: ["C"] },
+  { nom: "Lycée Jean Monnet",          lat: 48.5661, lng: 7.7571, lignes: ["C"] },
+  { nom: "Jean Jaurès",                lat: 48.5699, lng: 7.7540, lignes: ["C", "D"] },
+  { nom: "Poteries",                   lat: 48.5739, lng: 7.7508, lignes: ["D"] },
+  { nom: "Esplanade",                  lat: 48.5779, lng: 7.7611, lignes: ["C", "E"] },
+  { nom: "Landsberg",                  lat: 48.5811, lng: 7.7641, lignes: ["C", "D", "E"] },
+  { nom: "Université",                 lat: 48.5848, lng: 7.7671, lignes: ["C", "E", "F"] },
+  { nom: "Gallia",                     lat: 48.5882, lng: 7.7699, lignes: ["C", "E", "F"] },
+  { nom: "Observatoire",               lat: 48.5911, lng: 7.7658, lignes: ["C", "E", "F"] },
+  { nom: "Winston Churchill",          lat: 48.5941, lng: 7.7598, lignes: ["C", "E"] },
+  { nom: "Faubourg de Saverne",        lat: 48.5821, lng: 7.7419, lignes: ["C"] },
+  { nom: "Gare Centrale",              lat: 48.5851, lng: 7.7348, lignes: ["A", "C", "D"] },
+
+  // LIGNE D (incluant côté Kehl)
+  { nom: "Aristide Briand",            lat: 48.5871, lng: 7.7601, lignes: ["D"] },
+  { nom: "Starcoop",                   lat: 48.5789, lng: 7.7699, lignes: ["D"] },
+  { nom: "Citadelle",                  lat: 48.5811, lng: 7.7731, lignes: ["D"] },
+  { nom: "Marcel Rudloff",             lat: 48.5849, lng: 7.7289, lignes: ["D"] },
+  { nom: "Paul Éluard",                lat: 48.5878, lng: 7.7259, lignes: ["D"] },
+  { nom: "Port du Rhin",               lat: 48.5731, lng: 7.7891, lignes: ["D"] },
+  { nom: "Kehl Bahnhof",               lat: 48.5701, lng: 7.8079, lignes: ["D"] },
+  { nom: "Hochschule / Läger",         lat: 48.5681, lng: 7.8141, lignes: ["D"] },
+  { nom: "Kehl Rathaus",               lat: 48.5661, lng: 7.8188, lignes: ["D"] },
+
+  // LIGNE E
+  { nom: "Jardiniers",                 lat: 48.5961, lng: 7.7541, lignes: ["E"] },
+  { nom: "Mélanie",                    lat: 48.6001, lng: 7.7578, lignes: ["E"] },
+
+  // LIGNE F
+  { nom: "Place d'Islande",            lat: 48.5871, lng: 7.7738, lignes: ["F"] },
+  { nom: "Comtes",                     lat: 48.5798, lng: 7.7269, lignes: ["F"] },
+  { nom: "Parc des Romains",           lat: 48.5769, lng: 7.7241, lignes: ["F"] },
+  { nom: "Porte Blanche",              lat: 48.5741, lng: 7.7201, lignes: ["F"] },
+
+  // ═══════════════════════════════════════════════════════════════
+  // ✏️  Pour ajouter une station, copie une ligne et modifie-la.
+  // ✏️  Pour corriger des coords, utilise Google Maps (clic droit
+  //     sur la station → "Plus d'infos sur cet endroit") et
+  //     remplace lat/lng ici.
+  // ═══════════════════════════════════════════════════════════════
+];
+
+const LINE_COLORS = { A: "#e53935", B: "#1e88e5", C: "#f57c00", D: "#2e7d32", E: "#6a1b9a", F: "#66bb6a", G: "#f9a825", H: "#6d1f2f" };
+const TOLERANCE   = { facile: 300, normal: 150, expert: 80 };
+const TIMER_SECS  = { localise: 15, identifie: 20, complete: 240 };
+const NB_QUESTIONS = 15;
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let map, currentMode, currentDiff = "facile";
+let questions = [], qIndex = 0, score = 0, errors = 0;
+let timerInterval = null, timeLeft = 0, totalTime = 0;
+let clickListener = null;
+let pendingAnswer = false;
+let foundStations = new Set();
+let stationMarkers = {};
+let lastMode = null;
+
+// ══════════════════════════════════════════
+// INIT MAP
+// ══════════════════════════════════════════
+function initMap() {
+  if (map) return;
+  map = L.map("map", { zoomControl: true }).setView([48.5734, 7.7521], 13);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap",
+    maxZoom: 18
+  }).addTo(map);
+}
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function norm(s) {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim();
+}
+
+function distanceM(lat1, lng1, lat2, lng2) {
+  const R = 6371000, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function lineDots(lignes) {
+  return lignes.map(l => `<span class="line-dot" style="background:${LINE_COLORS[l]||'#999'}"></span>${l}`).join(" ");
+}
+
+function setDiff(btn) {
+  document.querySelectorAll(".diff-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  currentDiff = btn.dataset.diff;
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  if (id === "screen-game") setTimeout(() => map && map.invalidateSize(), 100);
+}
+
+// ══════════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════════
+function startTimer(secs, onEnd) {
+  stopTimer();
+  timeLeft = totalTime = secs;
+  updateTimerUI();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerUI();
+    if (timeLeft <= 0) { stopTimer(); onEnd(); }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function updateTimerUI() {
+  const fill = document.getElementById("timer-fill");
+  const val  = document.getElementById("timer-val");
+  const pct  = (timeLeft / totalTime) * 100;
+  fill.style.width = pct + "%";
+  val.textContent  = timeLeft;
+  const urgent = pct < 25;
+  fill.classList.toggle("urgent", urgent);
+  val.classList.toggle("urgent", urgent);
+}
+
+// ══════════════════════════════════════════
+// MODE: LOCALISE
+// ══════════════════════════════════════════
+function startMode(mode) {
+  lastMode = mode;
+  currentMode = mode;
+  initMap();
+  showScreen("screen-game");
+  document.querySelectorAll("#panel-localise,#panel-identifie,#panel-complete").forEach(p => p.style.display = "none");
+  document.getElementById("panel-" + mode).style.display = "block";
+
+  // Clear map
+  map.eachLayer(l => { if (l instanceof L.Marker || l instanceof L.Circle) map.removeLayer(l); });
+  if (clickListener) { map.off("click", clickListener); clickListener = null; }
+
+  score = 0; errors = 0; qIndex = 0; pendingAnswer = false;
+  foundStations = new Set(); stationMarkers = {};
+
+  const badges = { localise: "📍 LOCALISE", identifie: "🔍 IDENTIFIE", complete: "✍️ COMPLÈTE" };
+  document.getElementById("mode-badge").textContent = badges[mode];
+
+  if (mode === "localise")  startLocalise();
+  if (mode === "identifie") startIdentifie();
+  if (mode === "complete")  startComplete();
+}
+
+function startLocalise() {
+  questions = shuffle(STATIONS).slice(0, NB_QUESTIONS);
+  updateScoreUI();
+  askLocalise();
+}
+
+function askLocalise() {
+  if (qIndex >= questions.length) { endGame(); return; }
+  const st = questions[qIndex];
+  document.getElementById("q-station-name").textContent = st.nom;
+  document.getElementById("q-station-hint").innerHTML   = "Ligne(s) : " + lineDots(st.lignes);
+  document.getElementById("progress-txt").textContent   = "Question " + (qIndex+1) + " / " + NB_QUESTIONS;
+  document.getElementById("fb-localise").className      = "feedback";
+  document.getElementById("btn-next-localise").style.display = "none";
+  pendingAnswer = false;
+
+  startTimer(TIMER_SECS.localise, () => {
+    if (!pendingAnswer) timeoutLocalise();
+  });
+
+  clickListener = function(e) {
+    if (pendingAnswer) return;
+    pendingAnswer = true;
+    stopTimer();
+    map.off("click", clickListener); clickListener = null;
+
+    const dist = distanceM(e.latlng.lat, e.latlng.lng, st.lat, st.lng);
+    const tol  = TOLERANCE[currentDiff];
+    const ok   = dist <= tol;
+
+    // Marker vrai emplacement
+    const trueMarker = L.circleMarker([st.lat, st.lng], {
+      radius: 10, color: ok ? "#2e7d32" : "#c62828",
+      fillColor: ok ? "#d4edda" : "#f8d7da", fillOpacity: 0.9, weight: 2
+    }).addTo(map).bindPopup("<b>" + st.nom + "</b>").openPopup();
+
+    // Marker cliqué
+    L.circleMarker([e.latlng.lat, e.latlng.lng], {
+      radius: 7, color: "#555", fillColor: "#fff", fillOpacity: 0.8, weight: 2
+    }).addTo(map);
+
+    const fb = document.getElementById("fb-localise");
+    if (ok) {
+      score++; fb.className = "feedback ok";
+      fb.textContent = "✅ Correct ! " + (dist < 50 ? "Parfait !" : Math.round(dist) + "m — bien joué");
+    } else {
+      errors++; fb.className = "feedback ko";
+      fb.textContent = "❌ Raté · La station était à " + Math.round(dist) + "m";
+    }
+    updateScoreUI();
+    document.getElementById("btn-next-localise").style.display = "inline-block";
+    map.panTo([st.lat, st.lng]);
+  };
+  map.on("click", clickListener);
+}
+
+function timeoutLocalise() {
+  pendingAnswer = true;
+  if (clickListener) { map.off("click", clickListener); clickListener = null; }
+  const st = questions[qIndex];
+  errors++;
+  L.circleMarker([st.lat, st.lng], {
+    radius: 10, color: "#c62828", fillColor: "#f8d7da", fillOpacity: 0.9, weight: 2
+  }).addTo(map).bindPopup("<b>" + st.nom + "</b>").openPopup();
+  const fb = document.getElementById("fb-localise");
+  fb.className = "feedback ko";
+  fb.textContent = "⏱️ Temps écoulé !";
+  updateScoreUI();
+  document.getElementById("btn-next-localise").style.display = "inline-block";
+  map.panTo([st.lat, st.lng]);
+}
+
+// ══════════════════════════════════════════
+// MODE: IDENTIFIE
+// ══════════════════════════════════════════
+function startIdentifie() {
+  questions = shuffle(STATIONS).slice(0, NB_QUESTIONS);
+  updateScoreUI();
+  askIdentifie();
+}
+
+function askIdentifie() {
+  if (qIndex >= questions.length) { endGame(); return; }
+  const st = questions[qIndex];
+  document.getElementById("progress-txt").textContent = "Question " + (qIndex+1) + " / " + NB_QUESTIONS;
+  document.getElementById("fb-identifie").className   = "feedback";
+  document.getElementById("identifie-input").value    = "";
+  document.getElementById("btn-next-identifie").style.display = "none";
+  document.getElementById("identifie-input-row").style.display = "flex";
+  pendingAnswer = false;
+
+  map.eachLayer(l => { if (l instanceof L.Marker || l instanceof L.CircleMarker) map.removeLayer(l); });
+  L.circleMarker([st.lat, st.lng], {
+    radius: 14, color: "#d4a800", fillColor: "#fffbe6", fillOpacity: 1, weight: 3,
+    className: "pulse-marker"
+  }).addTo(map);
+  map.panTo([st.lat, st.lng]);
+  setTimeout(() => document.getElementById("identifie-input").focus(), 300);
+
+  startTimer(TIMER_SECS.identifie, () => {
+    if (!pendingAnswer) timeoutIdentifie();
+  });
+}
+
+function submitIdentifie() {
+  if (pendingAnswer) return;
+  const st    = questions[qIndex];
+  const value = document.getElementById("identifie-input").value.trim();
+  if (!value) return;
+  pendingAnswer = true;
+  stopTimer();
+
+  const ok = norm(value) === norm(st.nom);
+  const fb = document.getElementById("fb-identifie");
+  if (ok) {
+    score++; fb.className = "feedback ok"; fb.textContent = "✅ Correct !";
+  } else {
+    errors++; fb.className = "feedback ko";
+    fb.textContent = "❌ C'était : " + st.nom;
+  }
+  updateScoreUI();
+  document.getElementById("identifie-input-row").style.display = "none";
+  document.getElementById("btn-next-identifie").style.display = "inline-block";
+
+  // Reveal correct marker
+  map.eachLayer(l => { if (l instanceof L.CircleMarker) map.removeLayer(l); });
+  L.circleMarker([st.lat, st.lng], {
+    radius: 10, color: ok ? "#2e7d32" : "#c62828",
+    fillColor: ok ? "#d4edda" : "#f8d7da", fillOpacity: 0.9, weight: 2
+  }).addTo(map).bindPopup("<b>" + st.nom + "</b><br>" + lineDots(st.lignes)).openPopup();
+}
+
+function timeoutIdentifie() {
+  pendingAnswer = true;
+  const st = questions[qIndex];
+  errors++;
+  const fb = document.getElementById("fb-identifie");
+  fb.className = "feedback ko"; fb.textContent = "⏱️ Temps écoulé · C'était : " + st.nom;
+  updateScoreUI();
+  document.getElementById("identifie-input-row").style.display = "none";
+  document.getElementById("btn-next-identifie").style.display = "inline-block";
+  map.eachLayer(l => { if (l instanceof L.CircleMarker) map.removeLayer(l); });
+  L.circleMarker([st.lat, st.lng], {
+    radius: 10, color: "#c62828", fillColor: "#f8d7da", fillOpacity: 0.9, weight: 2
+  }).addTo(map).bindPopup("<b>" + st.nom + "</b>").openPopup();
+}
+
+// ══════════════════════════════════════════
+// MODE: COMPLÈTE
+// ══════════════════════════════════════════
+function startComplete() {
+  const total = STATIONS.length;
+  document.getElementById("total-count").textContent     = total;
+  document.getElementById("found-count").textContent     = 0;
+  document.getElementById("remaining-count").textContent = total;
+  document.getElementById("progress-txt").textContent    = "Mode libre";
+  document.getElementById("fb-complete").className       = "feedback";
+
+  // Place grey markers for all stations
+  stationMarkers = {};
+  foundCount = 0;
+  STATIONS.forEach(st => {
+    const key = norm(st.nom);
+    const m = L.circleMarker([st.lat, st.lng], {
+      radius: 7, color: "#bbb", fillColor: "#eee", fillOpacity: 0.8, weight: 1.5
+    }).addTo(map);
+    stationMarkers[key] = { marker: m, station: st, found: false };
+  });
+
+  startTimer(TIMER_SECS.complete, () => endComplete());
+  setTimeout(() => document.getElementById("complete-input").focus(), 300);
+}
+
+function onCompleteKey(e) {
+  if (e.key === "Enter") submitComplete();
+}
+
+let foundCount = 0;
+
+function submitComplete() {
+  const input = document.getElementById("complete-input");
+  const val   = input.value.trim();
+  if (!val) return;
+
+  const key   = norm(val);
+  const entry = stationMarkers[key];
+  const fb    = document.getElementById("fb-complete");
+
+  if (!entry) {
+    fb.className = "feedback ko"; fb.textContent = "\u274c Station inconnue";
+    setTimeout(() => { fb.className = "feedback"; }, 1500);
+    input.value = ""; return;
+  }
+  if (entry.found) {
+    fb.className = "feedback ko"; fb.textContent = "\u26a0\ufe0f D\u00e9j\u00e0 trouv\u00e9e !";
+    setTimeout(() => { fb.className = "feedback"; }, 1500);
+    input.value = ""; return;
+  }
+
+  // Found!
+  entry.found = true;
+  foundCount++;
+  entry.marker.setStyle({ color: "#2e7d32", fillColor: "#d4edda", fillOpacity: 1, weight: 2, radius: 9 });
+  entry.marker.bindPopup("<b>" + entry.station.nom + "</b><br>" + lineDots(entry.station.lignes)).openPopup();
+  map.panTo([entry.station.lat, entry.station.lng]);
+
+  const remaining = STATIONS.length - foundCount;
+  document.getElementById("found-count").textContent     = foundCount;
+  document.getElementById("remaining-count").textContent = remaining;
+  fb.className = "feedback ok"; fb.textContent = "\u2705 " + entry.station.nom + " !";
+  setTimeout(() => { fb.className = "feedback"; }, 1800);
+  input.value = "";
+
+  if (remaining === 0) { stopTimer(); endComplete(); }
+}
+
+function endComplete() {
+  stopTimer();
+  showResults(foundCount, STATIONS.length, "complete");
+}
+
+// ══════════════════════════════════════════
+// NEXT / END
+// ══════════════════════════════════════════
+function nextQuestion() {
+  qIndex++;
+  map.eachLayer(l => { if (l instanceof L.CircleMarker || l instanceof L.Circle) map.removeLayer(l); });
+  if (currentMode === "localise")  askLocalise();
+  if (currentMode === "identifie") askIdentifie();
+}
+
+function endGame() {
+  stopTimer();
+  showResults(score, NB_QUESTIONS, currentMode);
+}
+
+function updateScoreUI() {
+  document.getElementById("score-txt").textContent = "✅ " + score + "  ❌ " + errors;
+}
+
+// ══════════════════════════════════════════
+// RÉSULTATS
+// ══════════════════════════════════════════
+function showResults(correct, total, mode) {
+  const pct    = Math.round(correct / total * 100);
+  const emojis = pct >= 90 ? "🏆" : pct >= 70 ? "🎉" : pct >= 50 ? "👍" : "💪";
+  const titles = pct >= 90 ? "Excellent !" : pct >= 70 ? "Très bien !" : pct >= 50 ? "Pas mal !" : "Continue d'essayer !";
+
+  document.getElementById("results-emoji").textContent = emojis;
+  document.getElementById("results-title").textContent = titles;
+  document.getElementById("results-score").textContent = correct + " / " + total;
+  document.getElementById("results-label").textContent = mode === "complete" ? "stations retrouvées" : "bonnes réponses";
+
+  const modeLabel = { localise: "📍 Localise", identifie: "🔍 Identifie", complete: "✍️ Complète" };
+  const diffLabel = { facile: "😌 Facile", normal: "🧠 Normal", expert: "🔥 Expert" };
+
+  let det = "";
+  det += `<div class="results-row"><span>Mode</span><span>${modeLabel[mode]}</span></div>`;
+  if (mode !== "complete") det += `<div class="results-row"><span>Difficulté</span><span>${diffLabel[currentDiff]}</span></div>`;
+  det += `<div class="results-row"><span>Score</span><span>${correct} / ${total} — ${pct}%</span></div>`;
+  if (mode !== "complete") det += `<div class="results-row"><span>Erreurs</span><span>${errors}</span></div>`;
+
+  document.getElementById("results-details").innerHTML = det;
+  showScreen("screen-results");
+}
+
+function retryMode() { startMode(lastMode); }
+function goHome()    { stopTimer(); showScreen("screen-home"); }
+</script>
+</body>
+</html>
