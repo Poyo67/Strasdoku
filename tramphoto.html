@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TramPhoto – Strasbourg</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --tram: #d4a800; --tram-dark: #b88f00; --bg: #f4f4f2;
+  --surface: #fff; --border: #d0d0cc; --text: #1a1a1a; --muted: #777;
+  --ok: #2e7d32; --ko: #c62828; --ok-bg: #d4edda; --ko-bg: #f8d7da;
+}
+body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+nav {
+  background: var(--surface); border-bottom: 2px solid var(--tram);
+  padding: 10px 20px; display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.nav-logo { font-weight: 800; font-size: 16px; }
+.nav-logo span { background: var(--tram); color: #000; padding: 2px 8px; border-radius: 4px; margin-right: 6px; }
+.nav-home { color: var(--tram-dark); text-decoration: none; font-size: 13px; font-weight: 700;
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg); transition: all .15s; }
+.nav-home:hover { background: var(--tram); color: #000; border-color: var(--tram); }
+
+.screen { display: none; }
+.screen.active { display: block; }
+
+#screen-home { max-width: 580px; margin: 0 auto; padding: 40px 20px 80px; }
+.home-title { font-size: 2rem; font-weight: 800; margin-bottom: 6px; }
+.home-sub { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 32px; letter-spacing: .08em; }
+.home-desc { background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 20px 24px; margin-bottom: 24px; font-family: 'DM Mono', monospace;
+  font-size: 13px; color: var(--muted); line-height: 1.8; }
+.home-desc strong { color: var(--text); }
+.btn-start { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px;
+  padding: 14px 32px; background: var(--tram); color: #000; border: none;
+  border-radius: 8px; cursor: pointer; transition: all .15s; width: 100%; }
+.btn-start:hover { background: var(--tram-dark); }
+
+#screen-game { max-width: 700px; margin: 0 auto; padding: 24px 20px 80px; }
+.progress-bar-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.progress-bar { flex: 1; height: 6px; background: #e8e8e4; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--tram); border-radius: 3px; transition: width .4s; }
+.progress-txt { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.score-txt { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 700; margin-left: auto; }
+
+.photo-wrap { width: 100%; border-radius: 12px; overflow: hidden;
+  border: 1px solid var(--border); margin-bottom: 16px;
+  background: #e8e8e4; position: relative; }
+.photo-wrap img { width: 100%; display: block; max-height: 400px; object-fit: cover; }
+.photo-num { position: absolute; top: 12px; left: 12px;
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700;
+  background: rgba(0,0,0,0.55); color: #fff; padding: 3px 9px; border-radius: 4px; }
+.hint-btn { position: absolute; bottom: 12px; right: 12px;
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700;
+  background: rgba(0,0,0,0.55); color: #fff; border: none;
+  padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: background .15s; }
+.hint-btn:hover { background: rgba(0,0,0,0.8); }
+.hint-box { display: none; font-family: 'DM Mono', monospace; font-size: 12px;
+  background: #fffbe6; border: 1px solid #d4a800; border-radius: 6px;
+  padding: 8px 12px; margin-bottom: 12px; color: #555; }
+.no-photo { width: 100%; height: 240px; background: #e8e8e4; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted);
+  margin-bottom: 16px; gap: 8px; text-align: center; padding: 20px; }
+
+.question-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted);
+  letter-spacing: .08em; margin-bottom: 8px; }
+.input-wrap { position: relative; margin-bottom: 10px; }
+.input-wrap input { width: 100%; font-family: 'DM Mono', monospace; font-size: 15px;
+  background: var(--surface); color: var(--text); border: 2px solid var(--border);
+  border-radius: 8px; padding: 11px 14px; outline: none; transition: border-color .2s; }
+.input-wrap input:focus { border-color: var(--tram); }
+.input-wrap input.correct { border-color: var(--ok); background: var(--ok-bg); }
+.input-wrap input.wrong   { border-color: var(--ko); background: var(--ko-bg); }
+
+.ac-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  margin-top: 4px; max-height: 200px; overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(0,0,0,.1); display: none; }
+.ac-list div { padding: 9px 14px; font-family: 'DM Mono', monospace; font-size: 13px;
+  cursor: pointer; transition: background .1s; }
+.ac-list div:hover, .ac-list div.sel { background: var(--bg); }
+
+.feedback { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 700;
+  padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; display: none; line-height: 1.5; }
+.feedback.ok  { background: var(--ok-bg); color: var(--ok); display: block; }
+.feedback.ko  { background: var(--ko-bg); color: var(--ko); display: block; }
+
+.btn-row { display: flex; gap: 10px; }
+.btn-submit { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+  padding: 10px 22px; background: var(--tram); color: #000;
+  border: none; border-radius: 6px; cursor: pointer; transition: all .15s; flex: 1; }
+.btn-submit:hover { background: var(--tram-dark); }
+.btn-next { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+  padding: 10px 22px; background: var(--text); color: var(--bg);
+  border: none; border-radius: 6px; cursor: pointer; transition: all .15s; display: none; }
+.btn-next:hover { opacity: .85; }
+
+#screen-results { max-width: 560px; margin: 0 auto; padding: 40px 20px 80px; text-align: center; }
+.results-big { font-size: 3.5rem; font-weight: 800; color: var(--tram-dark); margin: 16px 0 4px; }
+.results-sub { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 28px; }
+.recap { text-align: left; margin-bottom: 24px; display: flex; flex-direction: column; gap: 8px; }
+.recap-row { display: flex; align-items: flex-start; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 14px;
+  font-family: 'DM Mono', monospace; font-size: 12px; }
+.recap-row.ok { border-left: 3px solid var(--ok); }
+.recap-row.ko { border-left: 3px solid var(--ko); }
+.recap-station { font-weight: 700; color: var(--text); }
+.recap-answer  { color: var(--muted); margin-top: 2px; }
+.btn-replay { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px;
+  padding: 12px 28px; background: var(--tram); color: #000;
+  border: none; border-radius: 8px; cursor: pointer; transition: all .15s; margin: 6px; }
+.btn-replay:hover { background: var(--tram-dark); }
+.btn-home-end { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px;
+  padding: 12px 28px; background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+  transition: all .15s; margin: 6px; }
+.btn-home-end:hover { border-color: var(--tram); color: var(--tram-dark); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo"><span>📸</span>TramPhoto</div>
+  <a href="index.html" class="nav-home">🏠 Accueil</a>
+</nav>
+
+<div id="screen-home" class="screen active">
+  <h1 class="home-title">📸 TramPhoto</h1>
+  <div class="home-sub">RECONNAIS LA STATION À PARTIR D'UNE PHOTO</div>
+  <div class="home-desc">
+    <strong>Comment jouer</strong><br>
+    Une photo d'une station de tram strasbourgeoise s'affiche.<br>
+    Tape le nom de la station. L'autocomplétion t'aide avec l'orthographe.<br>
+    Tu peux demander un 💡 indice si tu bloques.
+  </div>
+  <button class="btn-start" onclick="startGame()">Jouer →</button>
+</div>
+
+<div id="screen-game" class="screen">
+  <div class="progress-bar-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+    <span class="progress-txt" id="prog-txt">1 / ?</span>
+    <span class="score-txt" id="score-txt">✅ 0 &nbsp; ❌ 0</span>
+  </div>
+  <div id="photo-container"></div>
+  <div class="hint-box" id="hint-box"></div>
+  <div class="question-label">À QUEL ARRÊT SOMMES-NOUS ?</div>
+  <div class="input-wrap">
+    <input type="text" id="answer-input"
+      placeholder="Nom de la station…"
+      oninput="onInput()" onkeydown="onKey(event)"
+      autocomplete="off" autocorrect="off" spellcheck="false">
+    <div class="ac-list" id="ac-list"></div>
+  </div>
+  <div class="feedback" id="feedback"></div>
+  <div class="btn-row">
+    <button class="btn-submit" id="btn-submit" onclick="submit()">Valider →</button>
+    <button class="btn-next"   id="btn-next"   onclick="nextQuestion()">Photo suivante →</button>
+  </div>
+</div>
+
+<div id="screen-results" class="screen">
+  <div style="font-size:2.8rem" id="res-emoji">🎉</div>
+  <h2 style="font-size:1.4rem;font-weight:800;margin:12px 0 4px" id="res-title">Bravo !</h2>
+  <div class="results-big" id="res-score">8 / 10</div>
+  <div class="results-sub" id="res-sub">bonnes réponses</div>
+  <div class="recap" id="recap"></div>
+  <div>
+    <button class="btn-replay"   onclick="startGame()">🔄 Rejouer</button>
+    <button class="btn-home-end" onclick="goHome()">🏠 Accueil</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  🔑 CLÉ API GOOGLE STREET VIEW (optionnelle)
+//  → console.cloud.google.com → Street View Static API
+//  → Si vide, seules les photos locales fonctionnent
+// ═══════════════════════════════════════════════════════════
+const STREET_VIEW_KEY = "";
+
+// ═══════════════════════════════════════════════════════════
+//  📸 BASE DE DONNÉES DES PHOTOS
+//
+//  type "streetview" → image auto depuis coords GPS
+//    { station, hint, type:"streetview", lat, lng, heading, pitch }
+//    heading = direction de la caméra (0=Nord, 90=Est, 180=Sud, 270=Ouest)
+//    pitch   = inclinaison (-90 à 90, 0 = horizontal)
+//
+//  type "local" → photo que tu mets dans photos/ du repo
+//    { station, hint, type:"local", url:"photos/fichier.jpg" }
+//
+//  ✏️  Ajoute / supprime des entrées librement
+// ═══════════════════════════════════════════════════════════
+const PHOTOS = [
+  { station: "Homme de Fer",     hint: "C'est le coeur du réseau, toutes les lignes y passent",          type: "streetview", lat: 48.5832, lng: 7.7469, heading: 90,  pitch: 5  },
+  { station: "Gare Centrale",    hint: "Grande façade de pierre, départs grandes lignes",                 type: "streetview", lat: 48.5851, lng: 7.7348, heading: 180, pitch: 0  },
+  { station: "Broglie",          hint: "Grande place pavée en plein centre-ville",                        type: "streetview", lat: 48.5841, lng: 7.7491, heading: 45,  pitch: 5  },
+  { station: "République",       hint: "Bâtiments allemands du XIXe siècle tout autour",                  type: "streetview", lat: 48.5873, lng: 7.7491, heading: 270, pitch: 5  },
+  { station: "Université",       hint: "Campus universitaire, beaucoup d'étudiants",                      type: "streetview", lat: 48.5848, lng: 7.7671, heading: 120, pitch: 0  },
+  { station: "Wacken",           hint: "Proche des institutions européennes",                             type: "streetview", lat: 48.5941, lng: 7.7578, heading: 200, pitch: 5  },
+  { station: "Parlement Européen", hint: "Le bâtiment en verre est juste à côté",                        type: "streetview", lat: 48.5978, lng: 7.7629, heading: 60,  pitch: 5  },
+  { station: "Esplanade",        hint: "Grande esplanade dégagée, architecture moderne",                  type: "streetview", lat: 48.5779, lng: 7.7611, heading: 90,  pitch: 5  },
+  { station: "Gallia",           hint: "Quartier résidentiel calme, proche du parc",                      type: "streetview", lat: 48.5882, lng: 7.7699, heading: 150, pitch: 0  },
+  { station: "Observatoire",     hint: "On aperçoit le dôme de l'observatoire astronomique",              type: "streetview", lat: 48.5911, lng: 7.7658, heading: 80,  pitch: 5  },
+
+  // ── PHOTOS LOCALES — décommente et adapte ───────────────
+  // { station: "Illkirch Lixenbuhl", hint: "Terminus sud ligne A",  type: "local", url: "photos/illkirch-lixenbuhl.jpg" },
+  // { station: "Hoenheim Gare",      hint: "Terminus nord avec P+R", type: "local", url: "photos/hoenheim-gare.jpg" },
+];
+
+// ═══════════════════════════════════════════════════════════
+//  LISTE STATIONS pour l'autocomplétion
+// ═══════════════════════════════════════════════════════════
+const STATIONS = [
+  "Homme de Fer","Gare Centrale","Broglie","République","Université","Wacken",
+  "Parlement Européen","Ancienne Synagogue - Les Halles","Esplanade","Gallia",
+  "Observatoire","Langstross Grand'Rue","Porte de l'Hôpital","Dante",
+  "Ducs d'Alsace","Rotonde","Étoile Bourse","Étoile Polygone","Jean Jaurès",
+  "Poteries","Lycée Kléber","Parc du Contades","Laiterie","Faubourg National",
+  "Alt Winmärik","Elsau","Montagne Verte","Musée d'Art Moderne","Hœnheim Gare",
+  "Boecklin","Robertsau l'Escale","Droits de l'Homme","Winston Churchill",
+  "Hautepierre Mairie","Hautepierre Marché","Hohberg","Graffenstaden",
+  "Illkirch Lixenbuhl","Baggersee","Colonne","Leclerc","Campus d'Illkirch",
+  "Krimmeri - Stade de la Meinau","Neuhof Rodolphe Reuss","Kibitzenau",
+  "Saint-Christophe","Gravière","Lycée Jean Monnet","Aristide Briand","Landsberg",
+  "Place d'Islande","Faubourg de Saverne","Marcel Rudloff","Paul Éluard",
+  "Hôpital de Hautepierre","Cervantès","Le Galet","Parc des Sports",
+  "Lingolsheim Tiergaertel","Lingolsheim Alouettes","Bohrie","Ostwald Hôtel de Ville",
+  "Wihrel","Elmerforst","Wolfisheim Henri Rendu","Eckelse","Bois Romain",
+  "Port du Rhin","Kehl Bahnhof","Hochschule / Läger","Kehl Rathaus",
+  "Rives de l'Aar","Futura Glacière","Pont Phario","Le Marais",
+  "Martin Schongauer","Lycée Marc Bloch","Général de Gaulle","Le Ried",
+  "Jardiniers","Mélanie","Saint-Florent","Emile Mathis","Schluthfeld",
+  "Hohwart","Lycée Couffignal","Parc Malraux","Cours de l'Illiade",
+];
+
+// ═══════════════════════════════════════════════════════════
+//  LOGIQUE
+// ═══════════════════════════════════════════════════════════
+let questions=[], qIndex=0, score=0, errors=0, answered=false, acIndex=-1, history=[];
+
+function norm(s) {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim();
+}
+function shuffle(arr) {
+  const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a;
+}
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function startGame() {
+  questions=shuffle(PHOTOS); qIndex=0; score=0; errors=0; history=[];
+  showScreen("screen-game");
+  loadQuestion();
+}
+
+function photoURL(q) {
+  if (q.type==="local") return q.url;
+  if (!STREET_VIEW_KEY) return null;
+  return "https://maps.googleapis.com/maps/api/streetview?size=700x400&location="+q.lat+","+q.lng+"&heading="+(q.heading||90)+"&pitch="+(q.pitch||0)+"&fov=90&key="+STREET_VIEW_KEY;
+}
+
+function loadQuestion() {
+  const q=questions[qIndex], tot=questions.length;
+  document.getElementById("prog-fill").style.width=(qIndex/tot*100)+"%";
+  document.getElementById("prog-txt").textContent=(qIndex+1)+" / "+tot;
+  document.getElementById("score-txt").textContent="✅ "+score+"  ❌ "+errors;
+
+  const input=document.getElementById("answer-input");
+  input.value=""; input.className="";
+  document.getElementById("feedback").className="feedback";
+  document.getElementById("hint-box").style.display="none";
+  document.getElementById("ac-list").style.display="none";
+  document.getElementById("btn-submit").style.display="inline-block";
+  document.getElementById("btn-next").style.display="none";
+  answered=false; acIndex=-1;
+
+  const url=photoURL(q);
+  const container=document.getElementById("photo-container");
+
+  if (!url) {
+    const reason = q.type==="streetview"
+      ? "Ajoute ta clé API Google Street View en haut du fichier (const STREET_VIEW_KEY)"
+      : "Fichier introuvable : "+q.url;
+    container.innerHTML='<div class="no-photo">📷 Photo non disponible<span style="font-size:11px">'+reason+'</span></div>';
+  } else {
+    container.innerHTML=
+      '<div class="photo-wrap">'+
+        '<img src="'+url+'" alt="Station" onerror="this.parentElement.innerHTML=\'<div style=&quot;padding:40px;text-align:center;font-family:DM Mono,monospace;color:#888&quot;>📷 Photo indisponible</div>\'">'+
+        '<div class="photo-num">📸 '+(qIndex+1)+' / '+tot+'</div>'+
+        '<button class="hint-btn" onclick="showHint()">💡 Indice</button>'+
+      '</div>';
+  }
+  setTimeout(()=>input.focus(),200);
+}
+
+function showHint() {
+  const box=document.getElementById("hint-box");
+  box.textContent="💡 "+(questions[qIndex].hint||"Pas d'indice disponible.");
+  box.style.display="block";
+}
+
+function onInput() {
+  const val=document.getElementById("answer-input").value.trim();
+  const ac=document.getElementById("ac-list");
+  if(val.length<2){ac.style.display="none";acIndex=-1;return;}
+  const nv=norm(val);
+  const matches=STATIONS.filter(s=>norm(s).includes(nv)).slice(0,7);
+  if(!matches.length){ac.style.display="none";return;}
+  ac.innerHTML=matches.map(s=>'<div onclick="pick(\''+s.replace(/'/g,"\\'")+'\')">' +s+"</div>").join("");
+  ac.style.display="block"; acIndex=-1;
+}
+
+function pick(name) {
+  document.getElementById("answer-input").value=name;
+  document.getElementById("ac-list").style.display="none";
+  acIndex=-1; submit();
+}
+
+function onKey(e) {
+  const ac=document.getElementById("ac-list");
+  const items=ac.querySelectorAll("div");
+  if(e.key==="ArrowDown"){acIndex=Math.min(acIndex+1,items.length-1);items.forEach((d,i)=>d.classList.toggle("sel",i===acIndex));e.preventDefault();}
+  else if(e.key==="ArrowUp"){acIndex=Math.max(acIndex-1,0);items.forEach((d,i)=>d.classList.toggle("sel",i===acIndex));e.preventDefault();}
+  else if(e.key==="Enter"){if(acIndex>=0&&items[acIndex])pick(items[acIndex].textContent);else submit();}
+  else if(e.key==="Escape"){ac.style.display="none";acIndex=-1;}
+}
+
+function submit() {
+  if(answered)return;
+  const input=document.getElementById("answer-input");
+  const val=input.value.trim();
+  if(!val){input.focus();return;}
+  document.getElementById("ac-list").style.display="none";
+  answered=true;
+  const q=questions[qIndex];
+  const ok=norm(val)===norm(q.station);
+  const fb=document.getElementById("feedback");
+  if(ok){score++;input.className="correct";fb.className="feedback ok";fb.textContent="✅ Correct ! C'est bien "+q.station;}
+  else{errors++;input.className="wrong";fb.className="feedback ko";fb.textContent="❌ Raté ! C'était : "+q.station;input.value=q.station;}
+  history.push({q,ok,answer:val});
+  document.getElementById("score-txt").textContent="✅ "+score+"  ❌ "+errors;
+  document.getElementById("btn-submit").style.display="none";
+  document.getElementById("btn-next").style.display="inline-block";
+  document.getElementById("btn-next").textContent=qIndex+1<questions.length?"Photo suivante →":"Voir les résultats →";
+}
+
+function nextQuestion() {
+  qIndex++;
+  if(qIndex>=questions.length){showResults();return;}
+  loadQuestion();
+}
+
+function showResults() {
+  const tot=questions.length, pct=Math.round(score/tot*100);
+  document.getElementById("res-emoji").textContent=pct>=90?"🏆":pct>=70?"🎉":pct>=50?"👍":"💪";
+  document.getElementById("res-title").textContent=pct>=90?"Excellent !":pct>=70?"Très bien !":pct>=50?"Pas mal !":"Continue d'essayer !";
+  document.getElementById("res-score").textContent=score+" / "+tot;
+  document.getElementById("res-sub").textContent="bonnes réponses · "+pct+"%";
+  let recap="";
+  history.forEach(({q,ok,answer})=>{
+    recap+='<div class="recap-row '+(ok?"ok":"ko")+'"><span style="font-size:14px;flex-shrink:0">'+(ok?"✅":"❌")+'</span><div><div class="recap-station">'+q.station+'</div>'+(ok?'':'<div class="recap-answer">Ta réponse : '+answer+'</div>')+'</div></div>';
+  });
+  document.getElementById("recap").innerHTML=recap;
+  document.getElementById("prog-fill").style.width="100%";
+  showScreen("screen-results");
+}
+
+function goHome(){showScreen("screen-home");}
+</script>
+</body>
+</html>
