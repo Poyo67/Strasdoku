@@ -57,6 +57,7 @@ nav {
 .mode-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--tram); transform: scaleX(0); transition: transform .2s; }
 .mode-card:hover { border-color: var(--tram); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.08); }
 .mode-card:hover::before { transform: scaleX(1); }
+.mode-card { text-decoration; none ; color: inherit; display: block;}
 .mode-icon { font-size: 2rem; margin-bottom: 10px; }
 .mode-name { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
 .mode-desc { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); line-height: 1.5; }
@@ -629,7 +630,7 @@ function askIdentifie() {
     radius: 14, color: "#d4a800", fillColor: "#fffbe6", fillOpacity: 1, weight: 3,
     className: "pulse-marker"
   }).addTo(map);
-  map.setView([st.lat, st.lng], 12);
+  map.setView([st.lat, st.lng], 10);
   setTimeout(() => document.getElementById("identifie-input").focus(), 300);
 
   startTimer(TIMER_SECS.identifie, () => {
