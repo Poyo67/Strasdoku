@@ -229,6 +229,47 @@ main {
   padding-top: 4px;
 }
 
+
+/* ── TROUVE TRAM CARD ── */
+.tt-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 48px;
+}
+.tt-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--tram);
+  transform: scaleX(0);
+  transition: transform .2s;
+}
+.tt-card:hover { border-color: var(--tram); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.tt-card:hover::before { transform: scaleX(1); }
+.tt-left { display: flex; align-items: center; gap: 16px; }
+.tt-icon { font-size: 2.2rem; }
+.tt-title { font-size: 17px; font-weight: 800; margin-bottom: 4px; }
+.tt-desc { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); line-height: 1.5; max-width: 440px; }
+.tt-modes { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.tt-mode {
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 4px; padding: 2px 8px; color: var(--muted);
+}
+.tt-arrow { font-size: 20px; color: var(--tram); transition: transform .15s; flex-shrink: 0; margin-left: 16px; }
+.tt-card:hover .tt-arrow { transform: translateX(4px); }
+
 /* ── FOOTER ── */
 footer {
   text-align: center;
@@ -329,6 +370,24 @@ footer {
       </div>
     </div>
   </div>
+
+  <div class="section-title" style="margin-top: 48px;">Autre jeu</div>
+
+  <a href="tramquiz.html" class="tt-card">
+    <div class="tt-left">
+      <div class="tt-icon">🗺️</div>
+      <div>
+        <div class="tt-title">TrouveTram</div>
+        <div class="tt-desc">Teste ta connaissance du réseau CTS sur une vraie carte interactive.</div>
+        <div class="tt-modes">
+          <span class="tt-mode">📍 Localise</span>
+          <span class="tt-mode">🔍 Identifie</span>
+          <span class="tt-mode">✍️ Complète</span>
+        </div>
+      </div>
+    </div>
+    <div class="tt-arrow">→</div>
+  </a>
 
 </main>
 
