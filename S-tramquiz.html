@@ -414,7 +414,7 @@ const STATIONS = [
 
 const LINE_COLORS = { A: "#e53935", B: "#1e88e5", C: "#f57c00", D: "#2e7d32", E: "#6a1b9a", F: "#66bb6a", G: "#f9a825", H: "#6d1f2f" };
 const TOLERANCE   = { facile: 300, normal: 150, expert: 80 };
-const TIMER_SECS  = { localise: 15, identifie: 20, complete: 240 };
+const TIMER_SECS  = { localise: 15, identifie: 20, complete: 440 };
 const NB_QUESTIONS = 15;
 
 // ══════════════════════════════════════════
@@ -629,7 +629,7 @@ function askIdentifie() {
     radius: 14, color: "#d4a800", fillColor: "#fffbe6", fillOpacity: 1, weight: 3,
     className: "pulse-marker"
   }).addTo(map);
-  map.panTo([st.lat, st.lng]);
+  map.setView([st.lat, st.lng], 12);
   setTimeout(() => document.getElementById("identifie-input").focus(), 300);
 
   startTimer(TIMER_SECS.identifie, () => {
